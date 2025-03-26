@@ -337,48 +337,78 @@ async function sendOrderConfirmation(order) {
             }
         });
         
-        // Get user or guest email
-        const email = order.user ? 
-            (await User.findById(order.user)).email : 
-            order.shipping.email;
+        // Fetch the complete order with potential updates from database
+        const updatedOrder = await Order.findById(order._id);
+        if (!updatedOrder) {
+            throw new Error(`Order with ID ${order._id} not found in database`);
+        }
+        
+        // Get user information if it's a registered user purchase
+        let userInfo = null;
+        if (updatedOrder.user) {
+            userInfo = await User.findById(updatedOrder.user).select('-password');
+        }
+        
+        // Determine which email to use
+        const email = userInfo ? userInfo.email : updatedOrder.shipping.email;
         
         // Format order items for email
-        const itemsList = order.items.map(item => `
+        const itemsList = updatedOrder.items.map(item => `
             <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name} (${item.size})</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.quantity}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">£${item.price.toFixed(2)}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">£${(item.quantity * item.price).toFixed(2)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                    <div style="display: flex; align-items: center;">
+                        <img src="${item.image}" alt="${item.name}" style="max-width: 60px; margin-right: 10px; border-radius: 4px;">
+                        <div>
+                            <div style="font-weight: bold;">${item.name}</div>
+                            <div style="color: #666; font-size: 14px;">Size: ${item.size}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">£${item.price.toFixed(2)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">£${(item.quantity * item.price).toFixed(2)}</td>
             </tr>
         `).join('');
+        
+        // Format date properly
+        const orderDate = new Date(updatedOrder.createdAt).toLocaleDateString('en-GB', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        // Get order status
+        const orderStatus = updatedOrder.status ? updatedOrder.status.charAt(0).toUpperCase() + updatedOrder.status.slice(1) : 'Processing';
         
         // Email HTML content
         const mailOptions = {
             from: '"Habs Collection" <noreply@habscollection.com>',
             to: email,
-            subject: `Your Habs Collection Order #${order._id}`,
+            subject: `Your Habs Collection Order #${updatedOrder._id}`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
                     <div style="text-align: center; margin-bottom: 30px;">
                         <h1 style="color: #000;">Order Confirmation</h1>
                     </div>
                     
-                    <p>Dear ${order.shipping.firstName},</p>
+                    <p>Dear ${updatedOrder.shipping.firstName},</p>
                     
                     <p>Thank you for your order. We're pleased to confirm that your order has been received and is being processed.</p>
                     
-                    <div style="margin: 30px 0; background: #f9f9f9; padding: 20px;">
+                    <div style="margin: 30px 0; background: #f9f9f9; padding: 20px; border-radius: 8px;">
                         <h2 style="margin-top: 0; color: #000;">Order Summary</h2>
-                        <p><strong>Order Number:</strong> ${order._id}</p>
-                        <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
+                        <p><strong>Order Number:</strong> ${updatedOrder._id}</p>
+                        <p><strong>Order Date:</strong> ${orderDate}</p>
+                        <p><strong>Order Status:</strong> <span style="color: #28a745;">${orderStatus}</span></p>
                         
                         <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                             <thead>
                                 <tr style="background: #eee;">
                                     <th style="padding: 10px; text-align: left;">Item</th>
-                                    <th style="padding: 10px; text-align: left;">Qty</th>
-                                    <th style="padding: 10px; text-align: left;">Price</th>
-                                    <th style="padding: 10px; text-align: left;">Total</th>
+                                    <th style="padding: 10px; text-align: center;">Qty</th>
+                                    <th style="padding: 10px; text-align: right;">Price</th>
+                                    <th style="padding: 10px; text-align: right;">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -387,34 +417,41 @@ async function sendOrderConfirmation(order) {
                             <tfoot>
                                 <tr>
                                     <td colspan="3" style="padding: 10px; text-align: right;"><strong>Subtotal:</strong></td>
-                                    <td style="padding: 10px;">£${order.subtotal.toFixed(2)}</td>
+                                    <td style="padding: 10px; text-align: right;">£${updatedOrder.subtotal.toFixed(2)}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="3" style="padding: 10px; text-align: right;"><strong>Shipping:</strong></td>
-                                    <td style="padding: 10px;">${order.total > order.subtotal ? `£${(order.total - order.subtotal).toFixed(2)}` : 'FREE'}</td>
+                                    <td style="padding: 10px; text-align: right;">${updatedOrder.total > updatedOrder.subtotal ? `£${(updatedOrder.total - updatedOrder.subtotal).toFixed(2)}` : '<span style="color: #28a745;">FREE</span>'}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="3" style="padding: 10px; text-align: right;"><strong>Total:</strong></td>
-                                    <td style="padding: 10px;"><strong>£${order.total.toFixed(2)}</strong></td>
+                                    <td style="padding: 10px; text-align: right;"><strong>£${updatedOrder.total.toFixed(2)}</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
                     
-                    <div style="margin: 30px 0;">
+                    <div style="margin: 30px 0; background: #f9f9f9; padding: 20px; border-radius: 8px;">
                         <h2 style="color: #000;">Shipping Information</h2>
-                        <p>${order.shipping.firstName} ${order.shipping.lastName}</p>
-                        <p>${order.shipping.address}</p>
-                        <p>${order.shipping.city}, ${order.shipping.postcode}</p>
-                        <p>${order.shipping.country}</p>
+                        <p><strong>${updatedOrder.shipping.firstName} ${updatedOrder.shipping.lastName}</strong></p>
+                        <p>${updatedOrder.shipping.address}</p>
+                        <p>${updatedOrder.shipping.city}, ${updatedOrder.shipping.postcode}</p>
+                        <p>${updatedOrder.shipping.country}</p>
+                        <p><strong>Contact:</strong> ${updatedOrder.shipping.phone || 'Not provided'}</p>
                     </div>
                     
-                    <p>If you have any questions about your order, please contact our customer service team.</p>
+                    <div style="margin: 30px 0; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                        <h2 style="color: #000;">Need Help?</h2>
+                        <p>If you have any questions about your order, please contact our customer service team at <a href="mailto:support@habscollection.com" style="color: #007bff;">support@habscollection.com</a>.</p>
+                        
+                        <p>You can also track your order status by logging into your account on our website.</p>
+                    </div>
                     
                     <p>Thank you for shopping with Habs Collection!</p>
                     
                     <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #777; font-size: 12px;">
                         <p>© 2024 Habs Collection. All rights reserved.</p>
+                        <p>This email was sent to ${email}. Please do not reply to this email.</p>
                     </div>
                 </div>
             `
