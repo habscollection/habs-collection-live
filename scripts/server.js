@@ -224,41 +224,6 @@ app.post('/payment-success', async (req, res) => {
     }
 });
 
-// Test email
-app.post('/api/test-email', async (req, res) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASSWORD
-            },
-            tls: {
-                rejectUnauthorized: false
-            }
-        });
-        
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: req.body.email || process.env.EMAIL_USER,
-            subject: 'Test Email from Habs Collection',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-                    <h1 style="color: #000;">Test Email</h1>
-                    <p>This is a test email from the Habs Collection website.</p>
-                    <p>If you received this, email functionality is working correctly.</p>
-                </div>
-            `
-        };
-        
-        await transporter.sendMail(mailOptions);
-        res.json({ success: true, message: 'Test email sent successfully' });
-    } catch (error) {
-        console.error('Test email error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
 // Get product stock
 app.get('/api/products/:id/stock', async (req, res) => {
     try {
@@ -269,6 +234,127 @@ app.get('/api/products/:id/stock', async (req, res) => {
         res.json({ stock: product.stock });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Simple email test route that accepts a GET request
+app.get('/api/test-email', async (req, res) => {
+    console.log('GET Email test endpoint hit');
+    try {
+        const testEmail = req.query.email || process.env.EMAIL_USER;
+        
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            },
+            tls: {
+                rejectUnauthorized: false
+            },
+            debug: true,
+            logger: true
+        });
+        
+        // Verify SMTP connection works
+        const verifyResult = await transporter.verify();
+        console.log('SMTP connection verified:', verifyResult);
+        
+        const mailOptions = {
+            from: `"Habs Collection Test" <${process.env.EMAIL_USER}>`,
+            to: testEmail,
+            subject: 'Email Test from Habs Collection',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                    <h1 style="color: #000;">Test Email</h1>
+                    <p>This is a test email from the Habs Collection website.</p>
+                    <p>If you received this, email functionality is working correctly.</p>
+                    <p>Sent at: ${new Date().toLocaleString()}</p>
+                </div>
+            `
+        };
+        
+        console.log('Sending test email to:', testEmail);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.response);
+        
+        res.json({
+            success: true,
+            message: 'Test email sent successfully',
+            details: {
+                to: testEmail,
+                messageId: info.messageId,
+                response: info.response
+            }
+        });
+    } catch (error) {
+        console.error('Test email error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            code: error.code
+        });
+    }
+});
+
+// Test email (POST route)
+app.post('/api/test-email', async (req, res) => {
+    console.log('POST Email test endpoint hit with data:', req.body);
+    try {
+        const testEmail = req.body.email || process.env.EMAIL_USER;
+        
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            },
+            tls: {
+                rejectUnauthorized: false
+            },
+            debug: true,
+            logger: true
+        });
+        
+        console.log('Email credentials:', {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD ? '***Password masked***' : 'No password set'
+        });
+        
+        // Verify SMTP connection works
+        await transporter.verify();
+        
+        const mailOptions = {
+            from: `"Habs Collection" <${process.env.EMAIL_USER}>`,
+            to: testEmail,
+            subject: 'Test Email from Habs Collection (POST)',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                    <h1 style="color: #000;">Test Email (POST)</h1>
+                    <p>This is a test email from the Habs Collection website.</p>
+                    <p>If you received this, email functionality is working correctly.</p>
+                    <p>Sent at: ${new Date().toLocaleString()}</p>
+                </div>
+            `
+        };
+        
+        console.log('Sending test email to:', testEmail);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.response);
+        
+        res.json({
+            success: true,
+            message: 'Test email sent successfully',
+            messageId: info.messageId
+        });
+    } catch (error) {
+        console.error('Test email error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            code: error.code,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 
@@ -324,6 +410,7 @@ app.use((err, req, res, next) => {
 
 // Send order confirmation email function
 async function sendOrderConfirmation(order) {
+    console.log('Sending order confirmation email for order:', order._id);
     try {
         // Create email transporter
         const transporter = nodemailer.createTransport({
@@ -334,8 +421,14 @@ async function sendOrderConfirmation(order) {
             },
             tls: {
                 rejectUnauthorized: false
-            }
+            },
+            debug: true,
+            logger: true
         });
+        
+        // Verify transporter configuration
+        await transporter.verify();
+        console.log('SMTP connection verified successfully');
         
         // Fetch the complete order with potential updates from database
         const updatedOrder = await Order.findById(order._id);
@@ -343,14 +436,18 @@ async function sendOrderConfirmation(order) {
             throw new Error(`Order with ID ${order._id} not found in database`);
         }
         
+        console.log('Found order in database:', updatedOrder._id);
+        
         // Get user information if it's a registered user purchase
         let userInfo = null;
         if (updatedOrder.user) {
             userInfo = await User.findById(updatedOrder.user).select('-password');
+            console.log('Found user:', userInfo ? userInfo._id : 'None');
         }
         
         // Determine which email to use
         const email = userInfo ? userInfo.email : updatedOrder.shipping.email;
+        console.log('Sending confirmation to email:', email);
         
         // Format order items for email
         const itemsList = updatedOrder.items.map(item => `
@@ -383,7 +480,7 @@ async function sendOrderConfirmation(order) {
         
         // Email HTML content
         const mailOptions = {
-            from: '"Habs Collection" <noreply@habscollection.com>',
+            from: `"Habs Collection" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: `Your Habs Collection Order #${updatedOrder._id}`,
             html: `
@@ -457,10 +554,13 @@ async function sendOrderConfirmation(order) {
             `
         };
         
-        await transporter.sendMail(mailOptions);
-        console.log(`Order confirmation email sent to ${email}`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Order confirmation email sent to ${email}, messageId: ${info.messageId}`);
+        return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('Error sending order confirmation email:', error);
+        console.error('Error stack:', error.stack);
+        return { success: false, error: error.message };
     }
 }
 
