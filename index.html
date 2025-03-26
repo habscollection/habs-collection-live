@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Habs Collection</title>
+   <link rel="stylesheet" href="/css/styles.css">
+   <link rel="stylesheet" href="/css/animations.css">
+   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+   <!-- Announcement Bar -->
+   <div class="announcement-bar">
+       <p>ORDER BEFORE THURSDAY 27TH MARCH FOR EID-AL FITR</p>
+   </div>
+
+
+   <nav class="navbar">
+       <div class="nav-left">
+          <!-- <a href="#shop">SHOP</a> -->
+          <!-- <a href="#new">NEW IN</a> -->
+           <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
+       </div>
+       <div class="nav-center">
+           <a href="/" class="brand-logo">HABS COLLECTION</a>
+       </div>
+       <div class="nav-right">
+           <a href="#search" class="nav-icon">Search</a>
+           <a href="#account" class="nav-icon">Account</a>
+           <a href="cart.html" class="nav-icon">Cart (0)</a>
+       </div>
+
+       <div class="mobile-nav-right">
+           <a href="#search" class="nav-icon">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                   <circle cx="11" cy="11" r="8"></circle>
+                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+               </svg>
+           </a>
+           <a href="#account" class="nav-icon">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                   <circle cx="12" cy="7" r="4"></circle>
+               </svg>
+           </a>
+           <a href="cart.html" class="nav-icon">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                   <circle cx="9" cy="21" r="1"></circle>
+                   <circle cx="20" cy="21" r="1"></circle>
+                   <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+               </svg>
+               <span class="cart-count">0</span>
+           </a>
+       </div>
+
+       <button class="mobile-menu-toggle" aria-label="Toggle Menu">
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+               <line x1="3" y1="12" x2="21" y2="12"></line>
+               <line x1="3" y1="6" x2="21" y2="6"></line>
+               <line x1="3" y1="18" x2="21" y2="18"></line>
+           </svg>
+       </button>
+   </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu-overlay"></div>
+    <div class="mobile-menu">
+        <button class="mobile-menu-close">&times;</button>
+       <!-- <a href="#shop">SHOP</a> -->
+        <!-- <a href="#new">NEW IN</a> -->
+        <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
+        <a href="#search">Search</a>
+        <a href="#account">Account</a>
+        <a href="cart.html">Cart (0)</a>
+    </div>
+
+   <main>
+       <!-- Hero Section -->
+       <section class="hero">
+        <div class="video-container">
+            <video autoplay muted loop webkit-playsinline class="landscape-video">
+                <source src="assets/video/hero-video.mp4" type="video/mp4">
+                <source src="assets/video/hero-video.webm" type="video/webm">
+            </video>
+            <video autoplay muted loop class="vertical-video">
+                <source src="assets/video/hero-video-vertical.mp4" type="video/mp4">
+            </video>
+            <div class="overlay"></div>
+        </div>
+    </section>
+
+
+
+
+       <!-- Collection Categories -->
+
+
+       <section class="collection-title">
+           <h1>EID-AL FITR COLLECTION</h1>
+           <a href="products.html" class="btn-primary">SHOP NOW</a>
+       </section>
+
+
+       <section class="collection-categories">
+           <div class="category">
+               <div class="video-wrapper">
+                   <video autoplay muted loop>
+                       <source src="assets/video/Abaya 1.mp4" type="video/mp4">
+                   </video>
+                   <div class="overlay"></div>
+               </div>
+               <!-- <h3>ABAYAS</h3> -->
+               <a href="products.html" class="btn-secondary">SHOP NOW</a>
+           </div>
+           <div class="category">
+               <div class="video-wrapper">
+                   <video autoplay muted loop>
+                       <source src="assets/video/Abaya 2.mp4" type="video/mp4">
+                   </video>
+                   <div class="overlay"></div>
+               </div>
+               <!-- <h3>DRESSES</h3> -->
+               <a href="products.html" class="btn-secondary">SHOP NOW</a>
+           </div>
+       </section>
+   </main>
+
+
+<!-- Add this after your hero section -->
+<section class="product-feature">
+   <h2 class="section-title">SHOP OUR LATEST COLLECTION</h2>
+   <div class="product-grid">
+       <a href="/products/black-aztec.html" class="product-card">
+           <div class="product-image">
+               <img src="/assets/images/products/black-aztec.jpg" alt="Black Aztec" class="main-image" onload="this.classList.add('loaded')">
+               <img src="/assets/images/products/black-aztec-hover.jpg" alt="Black Aztec Hover" class="hover-image" onload="this.classList.add('loaded')">
+           </div>
+           <div class="product-info">
+               <h3>Black Aztec</h3>
+               <p class="price">£145.00</p>
+           </div>
+       </a>
+   
+       <a href="/products/sovereign-yellow.html" class="product-card">
+           <div class="product-image">
+               <img src="/assets/images/products/sovereign-yellow.jpg" alt="Sovereign Yellow Abaya" class="main-image" onload="this.classList.add('loaded')">
+               <img src="/assets/images/products/sovereign-yellow-hover.jpg" alt="Sovereign Yellow Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
+           </div>
+           <div class="product-info">
+               <h3>Sovereign Yellow</h3>
+               <p class="price">£200.00</p>
+           </div>
+       </a>
+   
+       <a href="/products/jacquard-gold-no-collar.html" class="product-card">
+           <div class="product-image">
+               <img src="/assets/images/products/jacquard-gold-no-collar.jpg" alt="Jacquard Gold No Collar Abaya" class="main-image" onload="this.classList.add('loaded')">
+               <img src="/assets/images/products/jacquard-gold-no-collar-hover.jpg" alt="Jacquard Gold No Collar Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
+           </div>
+           <div class="product-info">
+               <h3>Jacquard Gold No Collar</h3>
+               <p class="price">£145.00</p>
+           </div>
+       </a>
+   
+ <!-- 
+     <a href="/products/umber-mustard" class="product-card">
+           <div class="product-image">
+               <img src="assets/images/products/green-linen-abaya4.jpg" alt="Umber Mustard Abaya" class="main-image" onload="this.classList.add('loaded')">
+               <img src="assets/images/products/green-linen-abaya4-hover.jpg" alt="Umber Mustard Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
+           </div>
+           <div class="product-info">
+               <h3>Umber Mustard</h3>
+               <p class="price">£299.00</p>
+           </div>
+    </a>
+     -->
+
+   </div>
+<section>
+
+<!-- About Section -->
+<section class="about-section">
+    <div class="about-container">
+        <div class="about-video">
+            <video autoplay muted loop>
+                <source src="assets/video/BTS. about-video.mp4" type="video/mp4">
+                <source src="assets/video/BTS. about-video.mp4" type="video/webm">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="about-content">
+            <h2>ABOUT HABS COLLECTION</h2>
+            <p>HABS COLLECTION was born from a mother and daughters passion for finding pieces that are luxurious and stand the test of time.</p>
+            <p>We wanted to bring this expierence to you, starting off with stand out abayas that are sure to make a statement.</p>
+            <a href="products.html" class="btn-primary about-btn">DISCOVER MORE</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section">
+    <div class="features-grid">
+        <div class="feature-item">
+            <div class="feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="M7 8h10M7 12h10M7 16h10"/>
+                </svg>
+            </div>
+            <h3>ON TIME DELIVERY</h3>
+            <p>NEXT DAY DELIVERY AVAILABLE ON ALL PRODUCTS</p>
+        </div>
+        
+        <div class="feature-item">
+            <div class="feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h3>HANDCRAFTED EXCELLENCE</h3>
+            <p>Each item is handcrafted in London, ensuring exceptional quality and attention to detail.</p>
+        </div>
+        
+        <div class="feature-item">
+            <div class="feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+            </div>
+            <h3>SECURE PAYMENT</h3>
+            <p>Ensuring Your Safety and Security: A Trustworthy Payment Experience</p>
+        </div>
+    </div>
+</section>
+
+<!-- Updated Footer -->
+<footer class="site-footer">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-section">
+                <h4>LATEST COLLECTION</h4>
+                <ul>
+                    <li><a href="#abayas">ABAYAS</a></li>
+                    <li><a href="#dresses">DRESSES</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>CUSTOMER SERVICE</h4>
+                <ul>
+                    <li><a href="#contact">Contact Us</a></li>
+                    <li><a href="#shipping">Shipping Information</a></li>
+                    <li><a href="#returns">Returns & Exchanges</a></li>
+                    <li><a href="#size-guide">Size Guide</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>ABOUT</h4>
+                <ul>
+                    <li><a href="#story">Our Story</a></li>
+                    <li><a href="#sustainability">Sustainability</a></li>
+                    <li><a href="#stores">Stores</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section newsletter">
+                <h4>NEWSLETTER</h4>
+                <p>Subscribe to receive updates, access to exclusive deals, and more.</p>
+                <form class="newsletter-form">
+                    <div class="input-group">
+                        <input type="email" placeholder="Enter your email address" required>
+                        <button type="submit">Subscribe</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="footer-left">
+                <p>© 2024 - HABS COLLECTION</p>
+            </div>
+            <div class="footer-right">
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+<script>
+    // Mobile menu functionality
+    const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
+    const mobileMenuClose = document.querySelector('.mobile-menu-close');
+
+    function toggleMobileMenu() {
+        mobileMenu.classList.toggle('active');
+        mobileMenuOverlay.classList.toggle('active');
+        mobileMenuToggle.classList.toggle('active');
+        document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+    }
+
+    mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+    mobileMenuClose.addEventListener('click', toggleMobileMenu);
+    mobileMenuOverlay.addEventListener('click', toggleMobileMenu);
+
+    // Close mobile menu when clicking on a link
+    const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+    mobileMenuLinks.forEach(link => {
+        link.addEventListener('click', toggleMobileMenu);
+    });
+</script>
+
+
+
+</body>
+</html>

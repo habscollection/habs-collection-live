@@ -1,0 +1,165 @@
+.success-page {
+    padding: 4rem 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.success-container {
+    background: #fff;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.success-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 2rem;
+    color: #000;
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.success-container h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.confirmation-message {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+}
+
+.order-info {
+    background: #fafafa;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+    text-align: left;
+}
+
+.order-info h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.next-steps {
+    text-align: left;
+    margin-bottom: 2.5rem;
+}
+
+.next-steps h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.next-steps ul {
+    list-style: none;
+    padding: 0;
+}
+
+.next-steps li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+.next-steps li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 4px;
+    background: #000;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-continue-shopping,
+.btn-track-order {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.btn-continue-shopping {
+    background: #000;
+    color: #fff;
+}
+
+.btn-continue-shopping:hover {
+    background: #333;
+}
+
+.btn-track-order {
+    background: transparent;
+    border: 1px solid #000;
+    color: #000;
+}
+
+.btn-track-order:hover {
+    background: #000;
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .success-page {
+        padding: 2rem 1rem;
+    }
+
+    .success-container {
+        padding: 2rem 1.5rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .btn-continue-shopping,
+    .btn-track-order {
+        width: 100%;
+        text-align: center;
+    }
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Name - Habs Collection</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Announcement Bar -->
+    <div class="announcement-bar">
+        <p>FREE SHIPPING ON ORDERS OVER £300</p>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
+        </div>
+        <div class="nav-center">
+            <a href="/" class="brand-logo">HABS COLLECTION</a>
+        </div>
+        <div class="nav-right">
+            <a href="#search" class="nav-icon">Search</a>
+            <a href="#account" class="nav-icon">Account</a>
+            <a href="cart.html" class="nav-icon">Cart (0)</a>
+        </div>
+    </nav>
+
+    <main class="product-detail">
+        <div class="product-container">
+            <!-- Left side - Product Images -->
+            <div class="product-images">
+                <div class="main-image">
+                    <img src="assets/images/products/product-main.jpg" alt="Product Name" id="mainImage">
+                </div>
+                <div class="thumbnail-gallery">
+                    <img src="assets/images/products/product-thumb1.jpg" alt="Product thumbnail 1" onclick="updateMainImage(this.src)">
+                    <img src="assets/images/products/product-thumb2.jpg" alt="Product thumbnail 2" onclick="updateMainImage(this.src)">
+                    <img src="assets/images/products/product-thumb3.jpg" alt="Product thumbnail 3" onclick="updateMainImage(this.src)">
+                </div>
+            </div>
+
+            <!-- Right side - Product Info -->
+            <div class="product-info">
+                <h1 class="product-title">Product Name</h1>
+                <p class="product-subtitle">Product Description Line</p>
+                <p class="reference">Reference: PRODUCT-REF-123</p>
+
+                <!-- Size Selection -->
+                <div class="size-section">
+                    <div class="size-header">
+                        <label for="size">Select your size</label>
+                        <a href="#" class="size-chart">Size Chart</a>
+                    </div>
+                    <select name="size" id="size" class="size-select">
+                        <option value="">Select a size</option>
+                        <option value="xs">XS</option>
+                        <option value="s">S</option>
+                        <option value="m">M</option>
+                        <option value="l">L</option>
+                        <option value="xl">XL</option>
+                    </select>
+                    <a href="#" class="size-recommendation">Size recommendation</a>
+                </div>
+
+                <!-- Add to Cart Section -->
+                <div class="purchase-section">
+                    <button class="add-to-cart">Add to cart<span class="price">£299.00</span></button>
+                    <button class="express-checkout">Express checkout</button>
+                </div>
+
+                <!-- Product Details Tabs -->
+                <div class="product-tabs">
+                    <div class="tab-headers">
+                        <button class="tab-btn active" data-tab="description">Description</button>
+                        <button class="tab-btn" data-tab="size-fit">Size & Fit</button>
+                        <button class="tab-btn" data-tab="shipping">Shipping & Returns</button>
+                    </div>
+                    <div class="tab-content active" id="description">
+                        <p class="description-text">Product description goes here...</p>
+                        <ul class="product-features">
+                            <li>Feature 1</li>
+                            <li>Feature 2</li>
+                            <li>Feature 3</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- You May Also Like Section -->
+        <section class="related-products">
+            <h2>You may also like</h2>
+            <div class="product-grid">
+                <!-- Related products will go here -->
+            </div>
+        </section>
+    </main>
+</body>
+</html> 

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - Habs Collection</title>
+    <style>
+        /* Reset styles for email clients */
+        body, p, h1, h2, h3, h4, h5, h6, table, td, th {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+        }
+        
+        /* Main container with max-width for better readability */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        
+        /* Header styling */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .brand-name {
+            font-family: 'Cormorant Garamond', 'Georgia', 'Times New Roman', serif;
+            font-size: 32px;
+            color: #000000;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        /* Content styling */
+        .content {
+            padding: 30px 0;
+            color: #333333;
+        }
+        
+        h1 {
+            font-family: 'Cormorant Garamond', 'Georgia', serif;
+            color: #000000;
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: 400;
+            text-align: center;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Order Summary styling */
+        .order-summary {
+            background-color: #f9f9f9;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+        
+        .order-summary h2 {
+            font-family: 'Cormorant Garamond', 'Georgia', serif;
+            color: #000000;
+            font-size: 24px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eeeeee;
+            padding-bottom: 10px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Table styling optimized for email clients */
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .order-table th {
+            background-color: #eeeeee;
+            padding: 12px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .order-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eeeeee;
+            font-size: 14px;
+        }
+        
+        .item-details {
+            color: #666666;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        
+        .order-total {
+            margin-top: 20px;
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        /* Shipping Information styling */
+        .shipping-info {
+            margin: 30px 0;
+            padding: 0 25px;
+        }
+        
+        .shipping-info h2 {
+            font-family: 'Georgia', serif;
+            color: #000000;
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        /* Next Steps styling */
+        .next-steps {
+            margin: 30px 0;
+            padding: 0 25px;
+        }
+        
+        .next-steps h2 {
+            font-family: 'Georgia', serif;
+            color: #000000;
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .next-steps ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .next-steps li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666666;
+        }
+        
+        .next-steps li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #000000;
+        }
+        
+        /* Footer styling */
+        .footer {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid #eeeeee;
+            color: #777777;
+            font-size: 12px;
+        }
+        
+        /* Responsive styles */
+        @media screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                padding: 15px !important;
+            }
+            
+            .shipping-info,
+            .next-steps {
+                padding: 0 15px;
+            }
+            
+            .order-summary {
+                padding: 15px;
+            }
+            
+            .order-table {
+                font-size: 13px;
+            }
+            
+            .order-table th,
+            .order-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="brand-name">HABS COLLECTION</div>
+        </div>
+        
+        <div class="content">
+            <h1>Thank You for Your Order!</h1>
+            <p>Dear {{firstName}},</p>
+            <p>Thank you for shopping with Habs Collection. We're pleased to confirm that your order has been received and is being processed.</p>
+            
+            <div class="order-summary">
+                <h2>Order Summary</h2>
+                <p><strong>Order Number:</strong> {{orderId}}</p>
+                <p><strong>Order Date:</strong> {{orderDate}}</p>
+                
+                <table class="order-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each items}}
+                        <tr>
+                            <td>
+                                <div>{{name}}</div>
+                                <div class="item-details">Size: {{size}}</div>
+                            </td>
+                            <td>{{quantity}}</td>
+                            <td>£{{price}}</td>
+                            <td>£{{total}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" style="text-align: right;"><strong>Subtotal:</strong></td>
+                            <td>£{{subtotal}}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right;"><strong>Shipping:</strong></td>
+                            <td>{{shipping}}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+                            <td><strong>£{{total}}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <div class="shipping-info">
+                <h2>Shipping Information</h2>
+                <p>{{firstName}} {{lastName}}</p>
+                <p>{{address}}</p>
+                <p>{{city}}, {{postcode}}</p>
+                <p>{{country}}</p>
+            </div>
+            
+            <div class="next-steps">
+                <h2>What's Next?</h2>
+                <ul>
+                    <li>Your order is being processed and will be shipped within 2-3 business days.</li>
+                    <li>Once your order ships, you will receive a shipping confirmation email with tracking information.</li>
+                    <li>Please allow 5-7 business days for your order to arrive after shipping.</li>
+                </ul>
+            </div>
+            
+            <div class="Important Note">
+                <h2>Important Note</h2>
+                <ul>
+                    <li>Please note for orders made before Thursday 27th March, you will receive your order before Eid Al Fitr.</li>
+                    <li> If you have made a purchase after this date and would like to receive your order before Eid Al Fitr, please contact us on thehabscollection@gmail.com</li>
+                </ul>
+            </div>
+            
+            
+            <p>If you have any questions about your order, please don't hesitate to contact our customer service team.</p>
+            
+            <p>Thank you for shopping with Habs Collection!</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Habs Collection. All rights reserved.</p>
+            <p>This email was sent to {{email}}. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html> 

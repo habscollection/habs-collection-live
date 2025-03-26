@@ -1,0 +1,77 @@
+/* Secure Checkout Banner */
+.secure-checkout-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 35px;
+}
+
+.secure-checkout-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.secure-checkout-left i {
+    color: #333;
+    font-size: 1.2em;
+}
+
+.secure-checkout-left span {
+    font-size: 0.95em;
+    color: #333;
+    font-weight: 500;
+}
+
+.secure-checkout-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.secure-checkout-right span {
+    font-size: 0.85em;
+    color: #6c757d;
+}
+
+.stripe-logo-container {
+    width: 30px;  /* Reduced from 45px to 30px */
+    height: auto;
+    display: flex;
+    align-items: center;
+}
+
+.stripe-logo {
+    width: 100%;
+    height: auto;
+    opacity: 0.75;
+    object-fit: contain;
+    margin-left: 2px;  /* Add a small margin to space from the "Powered by" text */
+}
+
+/* Card Payment Form */
+.card-payment-form {
+    margin-top: 30px;
+}
+
+.stripe-element {
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.stripe-element.StripeElement--focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.stripe-errors {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 5px;
+} 

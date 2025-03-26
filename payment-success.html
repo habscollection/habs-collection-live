@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Payment - Habs Collection</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .processing-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 2rem;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 2rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .processing-message {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="processing-container">
+        <div class="spinner"></div>
+        <h2 class="processing-message">Processing your payment...</h2>
+        <p>Please do not close this window.</p>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const stripe = Stripe('pk_test_your_stripe_publishable_key');
+            
+            // Extract the payment intent client secret from the URL
+            const clientSecret = new URLSearchParams(window.location.search).get('payment_intent_client_secret');
+            const paymentIntentId = new URLSearchParams(window.location.search).get('payment_intent');
+            
+            if (!clientSecret) {
+                window.location.href = '/checkout.html';
+                return;
+            }
+
+            // Retrieve payment intent status
+            const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+            
+            if (paymentIntent.status === 'succeeded') {
+                // Payment successful - notify the server
+                try {
+                    const response = await fetch('/payment-success', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            paymentIntentId: paymentIntent.id
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Redirect to order success page with order ID
+                        window.location.href = `/order-success.html?id=${result.orderId}`;
+                    } else {
+                        throw new Error('Server processing failed');
+                    }
+                } catch (error) {
+                    console.error('Error processing payment success:', error);
+                    alert('Payment successful but there was an error updating your order. Please contact customer support.');
+                }
+            } else {
+                // Payment failed or is still processing
+                window.location.href = '/checkout.html?payment_status=' + paymentIntent.status;
+            }
+        });
+    </script>
+</body>
+</html> 

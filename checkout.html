@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Habs Collection</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="/css/animations.css">
+    <link rel="stylesheet" href="css/checkout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Load API and Cart scripts early with defer attribute -->
+    <script src="scripts/api.js" defer></script>
+    <script src="scripts/cart.js" defer></script>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <!-- Announcement Bar -->
+    <div class="announcement-bar">
+        <p>FREE SHIPPING ON ORDERS OVER £300</p>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
+        </div>
+        <div class="nav-center">
+            <a href="/" class="brand-logo">HABS COLLECTION</a>
+        </div>
+        <div class="nav-right">
+            <a href="#search" class="nav-icon">Search</a>
+            <a href="#account" class="nav-icon">Account</a>
+            <a href="#cart" class="nav-icon">Cart (<span class="cart-count">0</span>)</a>
+        </div>
+
+        <div class="mobile-nav-right">
+            <a href="#search" class="nav-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </a>
+            <a href="#account" class="nav-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </a>
+            <a href="#cart" class="nav-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+
+        <button class="mobile-menu-toggle" aria-label="Toggle Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu-overlay"></div>
+    <div class="mobile-menu">
+        <button class="mobile-menu-close">&times;</button>
+        <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
+        <a href="#search">Search</a>
+        <a href="#account">Account</a>
+        <a href="#cart">Cart (0)</a>
+    </div>
+
+    <main class="checkout-page">
+        <div class="checkout-container">
+            <div class="checkout-content">
+                <div class="checkout-steps">
+                    <div class="step active">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Shipping</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <span class="step-title">Payment</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <span class="step-title">Review</span>
+                    </div>
+                </div>
+
+                <form id="checkout-form" class="checkout-form">
+                    <!-- Shipping Information -->
+                    <div class="form-section shipping-info active">
+                        <h2>Shipping Information</h2>
+                        <div class="form-group">
+                            <div class="form-row">
+                                <div class="form-field">
+                                    <label for="firstName">First Name</label>
+                                    <input type="text" id="firstName" name="firstName" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="lastName">Last Name</label>
+                                    <input type="text" id="lastName" name="lastName" required>
+                                </div>
+                            </div>
+                            <div class="form-field">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="phone">Phone</label>
+                                <input type="tel" id="phone" name="phone" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="address">Address</label>
+                                <input type="text" id="address" name="address" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-field">
+                                    <label for="city">City</label>
+                                    <input type="text" id="city" name="city" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="postcode">Postcode</label>
+                                    <input type="text" id="postcode" name="postcode" required>
+                                </div>
+                            </div>
+                            <div class="form-field">
+                                <label for="country">Country</label>
+                                <select id="country" name="country" required>
+                                    <option value="">Select a country</option>
+                                    <option value="UK">United Kingdom</option>
+                                    <option value="US">United States</option>
+                                    <option value="CA">Canada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Information -->
+                    <div class="form-section payment-info">
+                        <h2>Payment Information</h2>
+                        <div class="secure-checkout-banner">
+                            <div class="secure-checkout-left">
+                                <i class="fas fa-lock"></i>
+                                <span>Guaranteed safe & secure checkout</span>
+                            </div>
+                            <div class="secure-checkout-right">
+                                <span>Powered by</span>
+                                <div class="stripe-logo-container">
+                                    <img src="assets/images/stripe-logo.png" alt="Stripe" class="stripe-logo">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="card-payment-form" class="card-payment-form">
+                            <div class="form-field">
+                                <label for="card-element">Card Details</label>
+                                <div id="card-element" class="stripe-element"></div>
+                                <div id="card-errors" class="stripe-errors" role="alert"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Review -->
+                    <div class="form-section order-review">
+                        <h2>Review Your Order</h2>
+                        <div class="order-items" id="order-items">
+                            <!-- Order items will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <!-- Form Navigation -->
+                    <div class="form-navigation">
+                        <button type="button" class="btn-prev" disabled>Previous</button>
+                        <button type="button" class="btn-next">Next</button>
+                        <button type="submit" class="btn-submit" style="display: none;">Place Order</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="order-summary">
+                <h2>Order Summary</h2>
+                <div class="summary-items" id="summary-items">
+                    <!-- Summary items will be dynamically added here -->
+                </div>
+                <div class="summary-totals">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="summary-subtotal">£0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping</span>
+                        <span id="summary-shipping">FREE</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span id="summary-total">£0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Updated Footer -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h4>LATEST COLLECTION</h4>
+                    <ul>
+                        <li><a href="#abayas">ABAYAS</a></li>
+                        <li><a href="#dresses">DRESSES</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>CUSTOMER SERVICE</h4>
+                    <ul>
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#shipping">Shipping Information</a></li>
+                        <li><a href="#returns">Returns & Exchanges</a></li>
+                        <li><a href="#size-guide">Size Guide</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>ABOUT</h4>
+                    <ul>
+                        <li><a href="#story">Our Story</a></li>
+                        <li><a href="#sustainability">Sustainability</a></li>
+                        <li><a href="#stores">Stores</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section newsletter">
+                    <h4>NEWSLETTER</h4>
+                    <p>Subscribe to receive updates, access to exclusive deals, and more.</p>
+                    <form class="newsletter-form">
+                        <div class="input-group">
+                            <input type="email" placeholder="Enter your email address" required>
+                            <button type="submit">Subscribe</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-left">
+                    <p>© 2024 - HABS COLLECTION</p>
+                </div>
+                <div class="footer-right">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="scripts/checkout.js"></script>
+    <script>
+        // Mobile menu functionality
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
+        const mobileMenuClose = document.querySelector('.mobile-menu-close');
+
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('active');
+            mobileMenuOverlay.classList.toggle('active');
+            mobileMenuToggle.classList.toggle('active');
+            document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+        }
+
+        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+        mobileMenuClose.addEventListener('click', toggleMobileMenu);
+        mobileMenuOverlay.addEventListener('click', toggleMobileMenu);
+
+        // Close mobile menu when clicking on a link
+        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', toggleMobileMenu);
+        });
+
+        // Multi-step form functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const formSections = document.querySelectorAll('.form-section');
+            const steps = document.querySelectorAll('.step');
+            const prevButton = document.querySelector('.btn-prev');
+            const nextButton = document.querySelector('.btn-next');
+            const submitButton = document.querySelector('.btn-submit');
+            let currentStep = 0;
+            
+            // Mobile-specific adjustments
+            const isMobile = window.innerWidth <= 768;
+            
+            // Scroll to top of form when changing steps on mobile
+            function scrollToTop() {
+                if (isMobile) {
+                    const formTop = document.querySelector('.checkout-content').getBoundingClientRect().top;
+                    const offset = formTop + window.scrollY - 100; // Account for header
+                    window.scrollTo({top: offset, behavior: 'smooth'});
+                }
+            }
+
+            // Initialize
+            updateFormState();
+
+            // Previous button click
+            prevButton.addEventListener('click', function() {
+                if (currentStep > 0) {
+                    currentStep--;
+                    updateFormState();
+                    scrollToTop();
+                }
+            });
+
+            // Next button click
+            nextButton.addEventListener('click', function() {
+                if (validateCurrentStep()) {
+                    if (currentStep < formSections.length - 1) {
+                        currentStep++;
+                        updateFormState();
+                        scrollToTop();
+                    }
+                }
+            });
+
+            // Update form state based on current step
+            function updateFormState() {
+                // Update form sections
+                formSections.forEach((section, index) => {
+                    section.classList.toggle('active', index === currentStep);
+                });
+
+                // Update steps
+                steps.forEach((step, index) => {
+                    step.classList.toggle('active', index === currentStep);
+                });
+
+                // Update buttons
+                prevButton.disabled = currentStep === 0;
+                
+                if (currentStep === formSections.length - 1) {
+                    nextButton.style.display = 'none';
+                    submitButton.style.display = 'block';
+                } else {
+                    nextButton.style.display = 'block';
+                    submitButton.style.display = 'none';
+                }
+            }
+
+            // Validate current step
+            function validateCurrentStep() {
+                const currentSection = formSections[currentStep];
+                const requiredFields = currentSection.querySelectorAll('[required]');
+                let valid = true;
+
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        valid = false;
+                        field.style.borderColor = '#f44336';
+                        
+                        // Add more visible error indication
+                        field.classList.add('error');
+                        
+                        // On mobile, scroll to first error
+                        if (isMobile && valid === false) {
+                            field.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center'
+                            });
+                            valid = false; // Ensure we only scroll once
+                        }
+                    } else {
+                        field.style.borderColor = '#e6e6e6';
+                        field.classList.remove('error');
+                    }
+                });
+
+                return valid;
+            }
+
+            // Clear error state on input
+            document.querySelectorAll('.form-field input, .form-field select').forEach(field => {
+                field.addEventListener('input', function() {
+                    this.style.borderColor = '#e6e6e6';
+                    this.classList.remove('error');
+                });
+            });
+
+            // Handle form submission
+            document.getElementById('checkout-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (validateCurrentStep()) {
+                    // Here you would normally submit the form data to the server
+                    alert('Order submitted successfully! This is a demo, no actual order was placed.');
+                    // Redirect to order confirmation page
+                    window.location.href = 'order-success.html';
+                }
+            });
+            
+            // Update on resize
+            window.addEventListener('resize', function() {
+                isMobile = window.innerWidth <= 768;
+            });
+        });
+    </script>
+</body>
+</html> 
