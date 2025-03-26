@@ -14,61 +14,36 @@ class Cart {
 
     async init() {
         try {
-            // Check if API is available and retry a few times with a delay
-            let attempts = 0;
-            const maxAttempts = 3;
+            console.log('[DEBUG] Initializing cart...');
             
-            while (!window.api && attempts < maxAttempts) {
-                console.log(`[DEBUG] API not available, waiting... (attempt ${attempts + 1}/${maxAttempts})`);
-                await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
-                attempts++;
-            }
-            
-            // Try to get cart from API first
-            let apiSuccess = false;
-            if (window.api) {
-                try {
-                    console.log('[DEBUG] API available, fetching cart items');
-                    const apiItems = await window.api.getCartItems();
-                    console.log('[DEBUG] Cart items from API:', apiItems);
-                    
-                    if (Array.isArray(apiItems)) {
-                        this.items = apiItems;
-                        apiSuccess = true;
-                    } else {
-                        console.warn('[DEBUG] Invalid cart items from API (not an array)');
-                    }
-                } catch (apiError) {
-                    console.error('[DEBUG] Error fetching cart from API:', apiError);
-                    // Will fall back to localStorage
-                }
-            } else {
-                console.warn('[DEBUG] API not available after waiting, using localStorage');
-            }
-            
-            // If API failed or is not available, try localStorage
-            if (!apiSuccess) {
-                try {
-                    const localCart = localStorage.getItem('cart');
-                    if (localCart) {
-                        this.items = JSON.parse(localCart);
-                        console.log('[DEBUG] Cart loaded from localStorage:', this.items);
-                    } else {
-                        console.log('[DEBUG] No cart found in localStorage, using empty cart');
-                        this.items = [];
-                    }
-                } catch (storageError) {
-                    console.error('[DEBUG] Error loading cart from localStorage:', storageError);
+            // Try to get cart from localStorage first (most reliable)
+            try {
+                const localCart = localStorage.getItem('cart');
+                if (localCart) {
+                    this.items = JSON.parse(localCart);
+                    console.log('[DEBUG] Cart loaded from localStorage:', this.items);
+                } else {
+                    console.log('[DEBUG] No cart found in localStorage, using empty cart');
                     this.items = [];
                 }
+            } catch (storageError) {
+                console.error('[DEBUG] Error loading cart from localStorage:', storageError);
+                this.items = [];
             }
             
-            // Update UI with cart contents from whichever source worked
+            // Update UI with cart contents
             this.updateCartDisplay();
             
-            // If on cart page, render items
+            // If on cart page, explicitly render items to ensure they show up
             if (window.location.pathname.includes('cart.html')) {
+                console.log('[DEBUG] On cart page, rendering cart items...');
                 this.renderCartItems();
+                
+                // Enable/disable checkout button based on cart contents
+                const checkoutButton = document.getElementById('checkout-button');
+                if (checkoutButton) {
+                    checkoutButton.disabled = this.items.length === 0;
+                }
             }
         } catch (error) {
             console.error('[DEBUG] Error initializing cart:', error);
@@ -92,61 +67,27 @@ class Cart {
                 image: product.images ? product.images.main : '/assets/images/placeholder.jpg'
             };
             
-            let apiSuccess = false;
+            // Check if item already exists in local cart first
+            const existingItemIndex = this.items.findIndex(item => 
+                item.id === cartItem.id && item.size === cartItem.size
+            );
             
-            // Try to add to server via API
-            if (window.api) {
-                try {
-                    console.log('[DEBUG] Adding item to database via API');
-                    const result = await window.api.addCartItem(cartItem);
-                    console.log('[DEBUG] Add to cart result:', result);
-                    
-                    if (result && result.success) {
-                        apiSuccess = true;
-                        
-                        try {
-                            console.log('[DEBUG] Refreshing cart items from server');
-                            // Refresh items from server
-                            this.items = await window.api.getCartItems();
-                            console.log('[DEBUG] Updated cart items:', this.items);
-                        } catch (getError) {
-                            console.error('[DEBUG] Error getting updated cart items:', getError);
-                            // Fall back to local update if refresh fails
-                            apiSuccess = false;
-                        }
-                    }
-                } catch (apiError) {
-                    console.error('[DEBUG] API error when adding to cart:', apiError);
-                    // Continue with local cart fallback
-                }
+            if (existingItemIndex > -1) {
+                // Update quantity if item exists locally
+                console.log('[DEBUG] Item already exists in local cart, updating quantity');
+                this.items[existingItemIndex].quantity += quantity;
             } else {
-                console.warn('[DEBUG] API not available, using local cart only');
+                // Only add to local array if we don't already have it
+                console.log('[DEBUG] Item does not exist in local cart, adding new item');
+                this.items.push(cartItem);
             }
             
-            // If API failed or is not available, update local cart
-            if (!apiSuccess) {
-                console.log('[DEBUG] Using local cart fallback');
-                
-                // Check if item already exists in cart
-                const existingItemIndex = this.items.findIndex(item => 
-                    item.id === cartItem.id && item.size === cartItem.size
-                );
-                
-                if (existingItemIndex > -1) {
-                    // Update quantity if item exists
-                    this.items[existingItemIndex].quantity += quantity;
-                } else {
-                    // Add new item
-                    this.items.push(cartItem);
-                }
-                
-                // Save cart to localStorage for persistence
-                try {
-                    localStorage.setItem('cart', JSON.stringify(this.items));
-                    console.log('[DEBUG] Cart saved to localStorage');
-                } catch (storageError) {
-                    console.error('[DEBUG] Error saving cart to localStorage:', storageError);
-                }
+            // Save cart to localStorage for persistence
+            try {
+                localStorage.setItem('cart', JSON.stringify(this.items));
+                console.log('[DEBUG] Cart saved to localStorage');
+            } catch (storageError) {
+                console.error('[DEBUG] Error saving cart to localStorage:', storageError);
             }
             
             // Update UI
@@ -556,6 +497,12 @@ class Cart {
             mobileCartCount.textContent = totalItems.toString();
         }
 
+        // Update checkout button state if it exists
+        const checkoutButton = document.getElementById('checkout-button');
+        if (checkoutButton) {
+            checkoutButton.disabled = this.items.length === 0;
+        }
+
         // Update cart lightbox items if it exists
         const cartItemsContainer = document.querySelector('.cart-items-container');
         if (cartItemsContainer) {
@@ -564,6 +511,9 @@ class Cart {
             if (this.items.length === 0) {
                 itemsHTML = '<p class="empty-cart-message">Your cart is empty</p>';
             } else {
+                // Clear existing items first to prevent duplicates
+                cartItemsContainer.innerHTML = '';
+                
                 this.items.forEach(item => {
                     const itemTotal = item.price * item.quantity;
                     
@@ -582,36 +532,53 @@ class Cart {
             }
             
             cartItemsContainer.innerHTML = itemsHTML;
-            
-            // Update the "just added" item notification
-            if (this.items.length > 0) {
-                const justAddedItem = this.items[this.items.length - 1];
-                
-                // Update the product name in the notification
-                const addedProductName = document.querySelector('.cart-added-notification h3');
-                if (addedProductName) {
-                    addedProductName.textContent = 'Added to Cart';
-                }
-                
-                // Update the product preview in the notification area (above the cart items)
-                const cartAddedNotification = document.querySelector('.cart-added-notification');
-                if (cartAddedNotification) {
-                    const previewHTML = `
-                        <h3>Added to Cart</h3>
-                        <div class="cart-product-preview">
-                            <img src="${justAddedItem.image}" alt="${justAddedItem.name}">
-                            <div class="cart-product-details">
-                                <h4 class="cart-product-name">${justAddedItem.name}</h4>
-                                <p class="cart-product-info">Size: ${justAddedItem.size}</p>
-                                <p class="cart-product-info">Quantity: ${justAddedItem.quantity}</p>
-                                <p class="cart-product-price">£${(justAddedItem.price * justAddedItem.quantity).toFixed(2)}</p>
-                            </div>
-                        </div>
-                    `;
-                    cartAddedNotification.innerHTML = previewHTML;
-                }
-            }
         }
+        
+        // If on cart page, also update the subtotal, shipping, and total
+        if (window.location.pathname.includes('cart.html')) {
+            const subtotalElement = document.getElementById('subtotal');
+            const shippingElement = document.getElementById('shipping');
+            const totalElement = document.getElementById('total');
+            
+            if (subtotalElement && shippingElement && totalElement) {
+                const totals = this.calculateTotal();
+                subtotalElement.textContent = `£${totals.subtotal.toFixed(2)}`;
+                shippingElement.textContent = totals.shipping === 0 ? 'FREE' : `£${totals.shipping.toFixed(2)}`;
+                totalElement.textContent = `£${totals.total.toFixed(2)}`;
+            }
+            
+            // Make sure to also render the cart items if we're on the cart page
+            this.renderCartItems();
+        }
+    }
+    
+    // Method to handle proceeding to checkout
+    proceedToCheckout() {
+        console.log('[DEBUG] Proceeding to checkout...');
+        
+        // Check if cart is empty
+        if (this.items.length === 0) {
+            this.showNotification('Your cart is empty', 'error');
+            return;
+        }
+        
+        // Navigate to checkout page
+        window.location.href = '/checkout.html';
+    }
+    
+    // Method to clear the cart
+    clearCart() {
+        console.log('[DEBUG] Clearing cart...');
+        
+        // Clear items array
+        this.items = [];
+        
+        // Clear localStorage
+        localStorage.removeItem('cart');
+        
+        // Update UI
+        this.updateCartDisplay();
+        this.showNotification('Cart cleared', 'info');
     }
 }
 

@@ -1,0 +1,21 @@
+{
+  "name": "habs-collection",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node scripts/server.js",
+    "dev": "nodemon scripts/server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "connect-mongo": "^5.1.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "fs-extra": "^11.3.0",
+    "handlebars": "^4.7.8",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.0",
+    "nodemailer": "^6.10.0",
+    "stripe": "^17.7.0"
+  }
+}

@@ -7,9 +7,74 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="/css/animations.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
-    <!-- Load API and Cart scripts early with defer attribute -->
-    <script src="scripts/api.js" defer></script>
-    <script src="scripts/cart.js" defer></script>
+    <!-- Load API and Cart scripts early without defer to ensure they load before DOM manipulation -->
+    <script src="scripts/api.js"></script>
+    <script src="scripts/cart.js"></script>
+    <script>
+        // Make sure the cart is initialized when the DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Cart page loaded, initializing cart...');
+            
+            // Ensure cart instance exists and is initialized
+            if (!window.cart) {
+                console.log('Creating new cart instance on cart page');
+                window.cart = new Cart();
+            } else {
+                console.log('Cart instance already exists, rendering items');
+                // Force render cart items in case they weren't rendered on init
+                window.cart.renderCartItems();
+            }
+            
+            // Manually ensure the checkout button event listener is attached
+            const checkoutButton = document.getElementById('checkout-button');
+            if (checkoutButton) {
+                checkoutButton.addEventListener('click', function() {
+                    if (window.cart) {
+                        window.cart.proceedToCheckout();
+                    } else {
+                        console.error('Cart instance not available');
+                        window.location.href = '/checkout.html';
+                    }
+                });
+                
+                // Enable/disable checkout button based on cart contents
+                checkoutButton.disabled = !window.cart || window.cart.items.length === 0;
+            }
+            
+            // Also attach event listener to clear cart button
+            const clearCartButton = document.getElementById('clear-cart-button');
+            if (clearCartButton) {
+                clearCartButton.addEventListener('click', function() {
+                    if (window.cart) {
+                        window.cart.clearCart();
+                    }
+                });
+            }
+            
+            // Mobile menu functionality
+            const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+            const mobileMenu = document.querySelector('.mobile-menu');
+            const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
+            const mobileMenuClose = document.querySelector('.mobile-menu-close');
+
+            function toggleMobileMenu() {
+                mobileMenu.classList.toggle('active');
+                mobileMenuOverlay.classList.toggle('active');
+                mobileMenuToggle.classList.toggle('active');
+                document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+            }
+
+            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            mobileMenuClose.addEventListener('click', toggleMobileMenu);
+            mobileMenuOverlay.addEventListener('click', toggleMobileMenu);
+
+            // Close mobile menu when clicking on a link
+            const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('click', toggleMobileMenu);
+            });
+        });
+    </script>
 </head>
 <body>
     <!-- Announcement Bar -->
@@ -25,18 +90,11 @@
             <a href="/" class="brand-logo">HABS COLLECTION</a>
         </div>
         <div class="nav-right">
-            <a href="#search" class="nav-icon">Search</a>
-            <a href="#account" class="nav-icon">Account</a>
+            <a href="/account.html" class="nav-icon">Account</a>
             <a href="cart.html" class="nav-icon active">Cart (<span class="cart-count">0</span>)</a>
         </div>
         <div class="mobile-nav-right">
-            <a href="#search" class="nav-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-            </a>
-            <a href="#account" class="nav-icon">
+            <a href="/account.html" class="nav-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
@@ -65,8 +123,7 @@
     <div class="mobile-menu">
         <button class="mobile-menu-close">&times;</button>
         <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
-        <a href="#search">Search</a>
-        <a href="#account">Account</a>
+        <a href="/account.html">Account</a>
         <a href="cart.html" class="active">Cart (<span class="cart-count">0</span>)</a>
     </div>
 
@@ -156,42 +213,9 @@
                     <p>© 2024 - HABS COLLECTION</p>
                 </div>
                 <div class="footer-right">
-                    <div class="payment-methods">
-                        <img src="assets/images/payment/visa.png" alt="Visa">
-                        <img src="assets/images/payment/mastercard.png" alt="Mastercard">
-                        <img src="assets/images/payment/amex.png" alt="American Express">
-                        <img src="assets/images/payment/paypal.png" alt="PayPal">
-                        <img src="assets/images/payment/apple-pay.png" alt="Apple Pay">
-                        <img src="assets/images/payment/google-pay.png" alt="Google Pay">
-                    </div>
                 </div>
             </div>
         </div>
     </footer>
-
-    <script>
-        // Mobile menu functionality
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
-        const mobileMenuClose = document.querySelector('.mobile-menu-close');
-
-        function toggleMobileMenu() {
-            mobileMenu.classList.toggle('active');
-            mobileMenuOverlay.classList.toggle('active');
-            mobileMenuToggle.classList.toggle('active');
-            document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
-        }
-
-        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
-        mobileMenuClose.addEventListener('click', toggleMobileMenu);
-        mobileMenuOverlay.addEventListener('click', toggleMobileMenu);
-
-        // Close mobile menu when clicking on a link
-        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
-        mobileMenuLinks.forEach(link => {
-            link.addEventListener('click', toggleMobileMenu);
-        });
-    </script>
 </body>
 </html> 

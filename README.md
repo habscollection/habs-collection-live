@@ -20,6 +20,8 @@ A modern e-commerce website for HABS COLLECTION, featuring a curated selection o
 - Stripe API for payments
 - MongoDB for database
 - Node.js backend
+- Express.js server
+- Apache web server (for production)
 
 ## Getting Started
 
@@ -52,33 +54,127 @@ npm start
 
 ## Deployment
 
-### Preparing for Deployment
+### AWS Lightsail Deployment
 
-1. Make sure all environment variables are set up on your hosting platform (not in the code)
-2. Ensure sensitive credentials are not committed to the repository
-3. Set the appropriate NODE_ENV value for your production environment
+1. **Create an AWS Lightsail Instance**:
+   - Choose a Linux/Unix platform with the LAMP stack blueprint
+   - Select an appropriate instance plan
+   - Create a static IP and attach it to your instance
 
-### Deploying to Hosting Platforms
+2. **Access Your Instance**:
+   - Connect to your instance using SSH
+   - Navigate to the web directory: `cd /var/www/html`
 
-#### Vercel
-1. Connect your GitHub repository to Vercel
-2. Configure environment variables in the Vercel dashboard
-3. Deploy with the Vercel CLI or through the dashboard
+3. **Clone Your Repository**:
+   ```bash
+   sudo git clone https://github.com/yourusername/habs-collection.git
+   cd habs-collection
+   ```
 
-#### Heroku
-1. Install the Heroku CLI
-2. Login to Heroku: `heroku login`
-3. Create a new Heroku app: `heroku create habs-collection`
-4. Set environment variables: `heroku config:set MONGODB_URI=your_mongodb_uri`
-5. Push to Heroku: `git push heroku main`
+4. **Install Node.js and npm**:
+   ```bash
+   curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+   sudo apt-get install -y nodejs
+   ```
 
-#### Netlify (for frontend)
-1. Connect your GitHub repository to Netlify
-2. Configure environment variables in the Netlify dashboard
-3. Set up build commands and publish directory
-4. Deploy through the Netlify dashboard
+5. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+6. **Set Up Environment Variables**:
+   ```bash
+   sudo nano .env
+   ```
+   Add your production environment variables:
+   ```
+   MONGODB_URI=your_mongodb_connection_string
+   STRIPE_SECRET_KEY=your_stripe_secret_key
+   STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+   EMAIL_USER=your_email@example.com
+   EMAIL_PASSWORD=your_email_app_password
+   SESSION_SECRET=your_session_secret
+   NODE_ENV=production
+   PORT=5501
+   ```
+
+7. **Install PM2 to Manage Your Node.js Application**:
+   ```bash
+   sudo npm install -g pm2
+   pm2 start scripts/server.js
+   pm2 startup
+   pm2 save
+   ```
+
+8. **Configure Apache**:
+   - Enable required modules:
+     ```bash
+     sudo a2enmod proxy proxy_http rewrite
+     ```
+   
+   - Create a new virtual host configuration:
+     ```bash
+     sudo nano /etc/apache2/sites-available/habs-collection.conf
+     ```
+     
+   - Add the following configuration:
+     ```apache
+     <VirtualHost *:80>
+         ServerAdmin webmaster@yourdomain.com
+         ServerName yourdomain.com
+         ServerAlias www.yourdomain.com
+         DocumentRoot /var/www/html/habs-collection
+
+         # Direct access to static files
+         <Directory /var/www/html/habs-collection>
+             Options Indexes FollowSymLinks
+             AllowOverride All
+             Require all granted
+         </Directory>
+
+         # Proxy API requests to Node.js server
+         ProxyRequests Off
+         ProxyPreserveHost On
+         ProxyVia Full
+         
+         <Location /api>
+             ProxyPass http://127.0.0.1:5501/api
+             ProxyPassReverse http://127.0.0.1:5501/api
+         </Location>
+         
+         <Location /create-payment-intent>
+             ProxyPass http://127.0.0.1:5501/create-payment-intent
+             ProxyPassReverse http://127.0.0.1:5501/create-payment-intent
+         </Location>
+         
+         <Location /payment-success>
+             ProxyPass http://127.0.0.1:5501/payment-success
+             ProxyPassReverse http://127.0.0.1:5501/payment-success
+         </Location>
+
+         ErrorLog ${APACHE_LOG_DIR}/error.log
+         CustomLog ${APACHE_LOG_DIR}/access.log combined
+     </VirtualHost>
+     ```
+
+9. **Enable the Site and Restart Apache**:
+   ```bash
+   sudo a2ensite habs-collection.conf
+   sudo a2dissite 000-default.conf
+   sudo systemctl restart apache2
+   ```
+
+10. **Set Up SSL with Let's Encrypt** (optional but recommended):
+    ```bash
+    sudo apt-get install certbot python3-certbot-apache
+    sudo certbot --apache -d yourdomain.com -d www.yourdomain.com
+    ```
+
+11. **Update DNS Settings**:
+    - Point your domain to the static IP of your Lightsail instance
 
 ### Post-Deployment
+
 1. Verify all functionality works in the production environment
 2. Ensure all API calls are functioning correctly
 3. Check payment processing with test transactions

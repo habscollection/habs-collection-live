@@ -90,19 +90,12 @@ async function generateProductHTML(product) {
            <a href="/index.html" class="brand-logo">HABS COLLECTION</a>
        </div>
        <div class="nav-right">
-           <a href="#search" class="nav-icon">Search</a>
-           <a href="#account" class="nav-icon">Account</a>
+           <a href="/account.html" class="nav-icon">Account</a>
            <a href="/cart.html" class="nav-icon">Cart (<span class="cart-count">0</span>)</a>
        </div>
 
        <div class="mobile-nav-right">
-           <a href="#search" class="nav-icon">
-               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                   <circle cx="11" cy="11" r="8"></circle>
-                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-               </svg>
-           </a>
-           <a href="#account" class="nav-icon">
+           <a href="/account.html" class="nav-icon">
                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                    <circle cx="12" cy="7" r="4"></circle>
@@ -131,11 +124,8 @@ async function generateProductHTML(product) {
     <div class="mobile-menu-overlay"></div>
     <div class="mobile-menu">
         <button class="mobile-menu-close">&times;</button>
-        <!-- <a href="#shop">SHOP</a> -->
-        <!-- <a href="#new">NEW IN</a> -->
         <a href="/products.html">EID-AL FITR COLLECTION - Limited Edition</a>
-        <a href="#search">Search</a>
-        <a href="#account">Account</a>
+        <a href="/account.html">Account</a>
         <a href="/cart.html">Cart (<span class="mobile-cart-count">0</span>)</a>
         <a href="/index.html" class="mobile-home-link">Home</a>
     </div>
@@ -316,14 +306,7 @@ async function generateProductHTML(product) {
                 <p>© 2024 - HABS COLLECTION</p>
             </div>
             <div class="footer-right">
-                <div class="payment-methods">
-                    <img src="assets/images/payment/visa.png" alt="Visa">
-                    <img src="assets/images/payment/mastercard.png" alt="Mastercard">
-                    <img src="assets/images/payment/amex.png" alt="American Express">
-                    <img src="assets/images/payment/paypal.png" alt="PayPal">
-                    <img src="assets/images/payment/apple-pay.png" alt="Apple Pay">
-                    <img src="assets/images/payment/google-pay.png" alt="Google Pay">
-                </div>
+                <!-- Payment methods removed as requested -->
             </div>
         </div>
     </div>
@@ -408,13 +391,32 @@ async function generateProductHTML(product) {
                             await window.cart.init();
                         }
                         
-                        // Use the cart.js addToCart function
+                        // Use the cart.js addItem function
                         const success = await window.cart.addItem(currentProduct, size);
                         
                         if (success) {
                             console.log('[DEBUG] Item successfully added to cart');
-                            // Show cart lightbox - moved inside success to ensure only shown on success
+                            
+                            // Update cart lightbox with product info before showing it
+                            const cartLightbox = document.querySelector('.cart-lightbox');
                             if (cartLightbox) {
+                                // Update only the notification part directly
+                                const cartAddedNotification = cartLightbox.querySelector('.cart-added-notification');
+                                if (cartAddedNotification) {
+                                    const previewHTML = 
+                                        '<h3>Added to Cart</h3>' +
+                                        '<div class="cart-product-preview">' +
+                                            '<img src="' + currentProduct.images.main + '" alt="' + currentProduct.name + '">' +
+                                            '<div class="cart-product-details">' +
+                                                '<h4 class="cart-product-name">' + currentProduct.name + '</h4>' +
+                                                '<p class="cart-product-info">Size: ' + size + '</p>' +
+                                                '<p class="cart-product-price">£' + currentProduct.price.toFixed(2) + '</p>' +
+                                            '</div>' +
+                                        '</div>';
+                                    cartAddedNotification.innerHTML = previewHTML;
+                                }
+                                
+                                // Show the cart lightbox
                                 cartLightbox.classList.add('active');
                                 document.body.classList.add('cart-open');
                             } else {

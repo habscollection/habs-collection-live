@@ -1,0 +1,2 @@
+const productGrid = document.querySelector('.product-feature .product-grid'); console.log('Product Grid exists:', cd /Users/hafsayuusuf/Downloads/HABS COLLECTION final && node scripts/generate-main-products.jsproductGrid, '
+Arrows exist:', cd /Users/hafsayuusuf/Downloads/HABS COLLECTION final && node scripts/generate-main-products.jsdocument.querySelector('.carousel-arrow.prev'), cd /Users/hafsayuusuf/Downloads/HABS COLLECTION final && node scripts/generate-main-products.jsdocument.querySelector('.carousel-arrow.next'))

@@ -10,8 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Load API and Cart scripts early with defer attribute -->
-    <script src="scripts/api.js" defer></script>
-    <script src="scripts/cart.js" defer></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/cart.js"></script>
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
@@ -28,25 +28,18 @@
             <a href="/" class="brand-logo">HABS COLLECTION</a>
         </div>
         <div class="nav-right">
-            <a href="#search" class="nav-icon">Search</a>
-            <a href="#account" class="nav-icon">Account</a>
-            <a href="#cart" class="nav-icon">Cart (<span class="cart-count">0</span>)</a>
+            <a href="/account.html" class="nav-icon">Account</a>
+            <a href="cart.html" class="nav-icon">Cart (<span class="cart-count">0</span>)</a>
         </div>
 
         <div class="mobile-nav-right">
-            <a href="#search" class="nav-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-            </a>
-            <a href="#account" class="nav-icon">
+            <a href="/account.html" class="nav-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                 </svg>
             </a>
-            <a href="#cart" class="nav-icon">
+            <a href="cart.html" class="nav-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="9" cy="21" r="1"></circle>
                     <circle cx="20" cy="21" r="1"></circle>
@@ -70,9 +63,8 @@
     <div class="mobile-menu">
         <button class="mobile-menu-close">&times;</button>
         <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
-        <a href="#search">Search</a>
-        <a href="#account">Account</a>
-        <a href="#cart">Cart (0)</a>
+        <a href="/account.html">Account</a>
+        <a href="cart.html">Cart (<span class="cart-count">0</span>)</a>
     </div>
 
     <main class="checkout-page">
@@ -153,7 +145,7 @@
                             <div class="secure-checkout-right">
                                 <span>Powered by</span>
                                 <div class="stripe-logo-container">
-                                    <img src="assets/images/stripe-logo.png" alt="Stripe" class="stripe-logo">
+                                    <img src="/assets/images/stripe-logo.png" alt="Stripe" class="stripe-logo">
                                 </div>
                             </div>
                         </div>
@@ -259,7 +251,18 @@
         </div>
     </footer>
 
-    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        // Stripe key will be fetched from server endpoint
+        // The checkout.js script will handle the fetching
+        
+        // Ensure cart is properly initialized
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.cart) {
+                console.log('Initializing cart from checkout page');
+                window.cart = new Cart();
+            }
+        });
+    </script>
     <script src="scripts/checkout.js"></script>
     <script>
         // Mobile menu functionality
@@ -396,10 +399,13 @@
             document.getElementById('checkout-form').addEventListener('submit', function(e) {
                 e.preventDefault();
                 if (validateCurrentStep()) {
-                    // Here you would normally submit the form data to the server
-                    alert('Order submitted successfully! This is a demo, no actual order was placed.');
-                    // Redirect to order confirmation page
-                    window.location.href = 'order-success.html';
+                    // The checkout.js script will handle the actual form submission
+                    // Just show a processing indicator
+                    const submitButton = document.querySelector('.btn-submit');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.textContent = 'Processing...';
+                    }
                 }
             });
             
@@ -408,6 +414,24 @@
                 isMobile = window.innerWidth <= 768;
             });
         });
+    </script>
+    <script>
+        // Set Stripe publishable key with API fallback
+        window.STRIPE_PUBLISHABLE_KEY = 'pk_test_51QJdt2Cry5lXoDcXQc003PQPE0e1EmCSuAbbZDQ6nIFPrj8ifipJ75GtNN5RDCVwioX4lIQMzPFYtdUnYhfyySrT00QULySgWD';
+        
+        // Try to fetch from API as well to ensure it's working
+        fetch('/api/stripe/config')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Successfully connected to Stripe API');
+                // Only update if we got a valid key from server
+                if (data.publishableKey && data.publishableKey.startsWith('pk_')) {
+                    window.STRIPE_PUBLISHABLE_KEY = data.publishableKey;
+                }
+            })
+            .catch(error => {
+                console.log('Using fallback Stripe key, API fetch failed:', error);
+            });
     </script>
 </body>
 </html> 

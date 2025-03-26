@@ -238,7 +238,6 @@ const products = [
             hover: "/assets/images/products/silk-satin-trench-hover.jpg",
             gallery: [
                 "/assets/images/products/silk-satin-trench.jpg",
-                "/assets/images/products/silk-satin-trench-hover.jpg",
                 "/assets/images/products/silk-satin-trench-back.jpg"
             ]
         },
@@ -322,8 +321,6 @@ const products = [
             hover: "/assets/images/products/lightweight-maroon-hover.jpg",
             gallery: [
                 "/assets/images/products/lightweight-maroon.jpg",
-                "/assets/images/products/lightweight-maroon-hover.jpg",
-                "/assets/images/products/lightweight-maroon-back.jpg"
             ]
         },
         sizes: ["52", "54", "56", "58", "60", "62"],

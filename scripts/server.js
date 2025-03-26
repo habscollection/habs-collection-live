@@ -4,6 +4,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const path = require('path');
 const session = require('express-session');
@@ -11,6 +12,13 @@ const MongoStore = require('connect-mongo');
 const app = express();
 const { updateStockAndPages } = require('./update-stock-and-pages');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cartRoutes = require('../routes/cart');
+const orderRoutes = require('../routes/orders');
+const paymentRoutes = require('../routes/payment');
+const authRoutes = require('../routes/auth');
+const stripeConfigRoutes = require('../server/stripe-config');
 
 // Connect to MongoDB
 async function connectDB() {
@@ -41,19 +49,28 @@ app.use(session({
     }
 }));
 
-// Middleware
+// Essential middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
 
-// Import routes
-const cartRoutes = require('../routes/cart');
-const orderRoutes = require('../routes/orders');
-const paymentRoutes = require('../routes/payment');
+// Add CORS headers to allow API requests from the frontend
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).json({});
+    }
+    next();
+});
 
-// Use routes
+// ===== API ROUTES - Register these BEFORE static file middleware =====
+// Mount API route modules
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/stripe', stripeConfigRoutes);
 
 // Product routes
 app.get('/api/products', async (req, res) => {
@@ -132,6 +149,13 @@ app.post('/api/orders', async (req, res) => {
         const order = new Order(orderData);
         await order.save();
         
+        // If user is logged in, update their orders
+        if (userId) {
+            await User.findByIdAndUpdate(userId, {
+                $push: { orders: order._id }
+            });
+        }
+        
         res.status(201).json({ orderId: order._id });
     } catch (error) {
         console.error('Error creating order:', error);
@@ -171,7 +195,134 @@ app.post('/create-payment-intent', async (req, res) => {
     }
 });
 
-// Send order confirmation email
+// Payment success webhook
+app.post('/payment-success', async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        
+        if (!orderId) {
+            return res.status(400).json({ error: 'Order ID is required' });
+        }
+        
+        // Update order status
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        
+        order.status = 'paid';
+        order.paymentDate = new Date();
+        await order.save();
+        
+        // Send order confirmation email
+        await sendOrderConfirmation(order);
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Payment success webhook error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Test email
+app.post('/api/test-email', async (req, res) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+        
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: req.body.email || process.env.EMAIL_USER,
+            subject: 'Test Email from Habs Collection',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                    <h1 style="color: #000;">Test Email</h1>
+                    <p>This is a test email from the Habs Collection website.</p>
+                    <p>If you received this, email functionality is working correctly.</p>
+                </div>
+            `
+        };
+        
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'Test email sent successfully' });
+    } catch (error) {
+        console.error('Test email error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get product stock
+app.get('/api/products/:id/stock', async (req, res) => {
+    try {
+        const product = await Product.findOne({ id: req.params.id });
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json({ stock: product.stock });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API error handler middleware
+app.use('/api', (err, req, res, next) => {
+    console.error('API Error:', err);
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
+
+// ===== STATIC FILES - Served AFTER API routes =====
+// Serve static files from the root directory, but exclude /api paths
+app.use('/', (req, res, next) => {
+    // Skip static file handling for API requests
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+    
+    // For all other requests, try to serve static files
+    express.static(path.join(__dirname, '../'))(req, res, next);
+});
+
+// ===== PAGE ROUTES - Serve HTML pages =====
+// Serve HTML files
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+app.get('/account', (req, res) => {
+    res.sendFile(path.join(__dirname, '../account.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../login.html'));
+});
+
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, '../signup.html'));
+});
+
+// Serve SPA for all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+// General error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Server Error:', err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Send order confirmation email function
 async function sendOrderConfirmation(order) {
     try {
         // Create email transporter
@@ -272,218 +423,9 @@ async function sendOrderConfirmation(order) {
         await transporter.sendMail(mailOptions);
         console.log(`Order confirmation email sent to ${email}`);
     } catch (error) {
-        console.error('Error sending confirmation email:', error);
+        console.error('Error sending order confirmation email:', error);
     }
 }
 
-// Handle successful payment
-app.post('/payment-success', async (req, res) => {
-    const { paymentIntentId, orderId } = req.body;
-    
-    try {
-        // Verify the payment was successful
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        
-        if (paymentIntent.status === 'succeeded') {
-            // 1. Update database with order details
-            const order = await Order.findById(orderId);
-            if (!order) {
-                return res.status(404).json({ error: 'Order not found' });
-            }
-            
-            // Update order status and payment info
-            order.payment.status = 'completed';
-            order.payment.transactionId = paymentIntentId;
-            order.status = 'processing';
-            await order.save();
-            
-            // 2. Update inventory for each product and regenerate pages
-            for (const item of order.items) {
-                try {
-                    // Update stock directly in the database
-                    const product = await Product.findById(item.productId);
-                    if (product) {
-                        // Get current stock
-                        const currentStock = product.stock.get(item.size) || 0;
-                        // Update stock (ensure it doesn't go below 0)
-                        const newStock = Math.max(0, currentStock - item.quantity);
-                        product.stock.set(item.size, newStock);
-                        await product.save();
-                        
-                        // Regenerate the product page
-                        const productsDir = path.join(__dirname, '..', 'products');
-                        if (!fs.existsSync(productsDir)) {
-                            fs.mkdirSync(productsDir, { recursive: true });
-                        }
-                        
-                        const { generateProductHTML } = require('./generate-product-pages');
-                        const html = await generateProductHTML(product);
-                        const filePath = path.join(productsDir, `${product.slug}.html`);
-                        fs.writeFileSync(filePath, html);
-                        console.log(`Regenerated page for ${product.name}`);
-                    }
-                } catch (stockError) {
-                    console.error(`Failed to update stock for product ${item.productId}:`, stockError);
-                    // Continue processing other items even if one fails
-                }
-            }
-            
-            // 3. Send confirmation email to customer
-            await sendOrderConfirmation(order);
-            
-            res.json({ 
-                success: true,
-                redirectUrl: `/order-success.html?id=${orderId}`
-            });
-        } else {
-            res.status(400).json({ error: 'Payment was not successful' });
-        }
-    } catch (error) {
-        console.error('Error processing payment success:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Test route for email
-app.post('/api/test-email', async (req, res) => {
-    try {
-        const testOrder = {
-            _id: 'TEST123',
-            items: [{
-                name: 'Test Product',
-                size: 'M',
-                quantity: 1,
-                price: 29.99
-            }],
-            shipping: {
-                firstName: 'Test',
-                lastName: 'User',
-                email: req.body.email || process.env.EMAIL_USER,
-                address: '123 Test St',
-                city: 'Test City',
-                postcode: 'TE1 1ST',
-                country: 'United Kingdom'
-            },
-            subtotal: 29.99,
-            total: 34.99,
-            createdAt: new Date()
-        };
-
-        await sendOrderConfirmation(testOrder);
-        res.json({ message: 'Test email sent successfully' });
-    } catch (error) {
-        console.error('Error sending test email:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Get product stock
-app.get('/api/products/:id/stock', async (req, res) => {
-    try {
-        const { size } = req.query;
-        const productId = req.params.id;
-        
-        console.log(`[DEBUG SERVER] Checking stock for product ID: ${productId}, size: ${size}`);
-        
-        if (!productId) {
-            console.error('[DEBUG SERVER] Missing product ID');
-            return res.status(400).json({ message: 'Missing product ID' });
-        }
-        
-        if (!size) {
-            console.error('[DEBUG SERVER] Missing size parameter');
-            return res.status(400).json({ message: 'Missing size parameter' });
-        }
-        
-        // Try to find the product by different ID fields
-        let product = null;
-        
-        // First try by the id field
-        console.log('[DEBUG SERVER] Trying to find product by id field');
-        product = await Product.findOne({ id: productId });
-        
-        // If not found, try by MongoDB _id
-        if (!product) {
-            console.log('[DEBUG SERVER] Not found by id, trying by _id');
-            try {
-                if (mongoose.Types.ObjectId.isValid(productId)) {
-                    product = await Product.findById(productId);
-                    if (product) {
-                        console.log('[DEBUG SERVER] Found by _id');
-                    }
-                } else {
-                    console.log('[DEBUG SERVER] Invalid ObjectId format:', productId);
-                }
-            } catch (err) {
-                console.error("[DEBUG SERVER] Error finding by _id:", err.message);
-            }
-        } else {
-            console.log('[DEBUG SERVER] Found by id field');
-        }
-        
-        // If still not found, try by slug as last resort
-        if (!product) {
-            console.log('[DEBUG SERVER] Not found by id or _id, trying by slug');
-            product = await Product.findOne({ slug: productId });
-            if (product) {
-                console.log('[DEBUG SERVER] Found by slug');
-            }
-        }
-        
-        if (!product) {
-            console.error(`[DEBUG SERVER] Product with ID ${productId} not found after all attempts`);
-            return res.status(404).json({ 
-                message: 'Product not found',
-                productId: productId,
-                searchMethods: ['id', '_id', 'slug']
-            });
-        }
-
-        // Get the stock level from the product
-        console.log('[DEBUG SERVER] Product found:', {
-            id: product._id,
-            customId: product.id,
-            name: product.name,
-            slug: product.slug
-        });
-        
-        // Check if stock field exists and is valid
-        if (!product.stock || typeof product.stock.get !== 'function') {
-            console.error('[DEBUG SERVER] Invalid stock structure', product.stock);
-            return res.status(500).json({ 
-                message: 'Invalid stock structure',
-                stockType: typeof product.stock
-            });
-        }
-        
-        const stockLevel = product.stock.get(size) || 0;
-        console.log(`[DEBUG SERVER] Stock level for size ${size}: ${stockLevel}`);
-        
-        // Return the available stock
-        res.json({ 
-            availableStock: stockLevel,
-            message: 'Stock retrieved successfully',
-            productName: product.name
-        });
-    } catch (error) {
-        console.error('[DEBUG SERVER] Error checking stock:', error);
-        res.status(500).json({ 
-            error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
-    }
-});
-
-// Serve SPA for all other routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'index.html'));
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
-});
-
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5501;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 

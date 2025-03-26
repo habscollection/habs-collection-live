@@ -7,6 +7,140 @@
    <link rel="stylesheet" href="/css/styles.css">
    <link rel="stylesheet" href="/css/animations.css">
    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+   <style>
+      /* Video optimization styles */
+      video {
+         object-fit: cover;
+         width: 100%;
+         height: 100%;
+         position: relative;
+         z-index: 0;
+         background-color: #000; /* Fallback color while video loads */
+      }
+      
+      .video-container, .video-wrapper, .about-video {
+         position: relative;
+         overflow: hidden;
+         pointer-events: none; /* Prevents click to play/pause */
+      }
+      
+      /* Fix for iOS Safari */
+      @supports (-webkit-touch-callout: none) {
+         video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            transform: translate(-50%, -50%);
+            transform-origin: center center;
+         }
+      }
+      
+      /* Prevent video controls from appearing */
+      video::-webkit-media-controls {
+         display: none !important;
+      }
+      
+      video::-webkit-media-controls-enclosure {
+         display: none !important;
+      }
+      
+      /* Optimize for better performance */
+      .video-container video, .video-wrapper video, .about-video video {
+         will-change: transform;
+         transform: translateZ(0);
+         backface-visibility: hidden;
+         perspective: 1000px;
+      }
+      
+      /* Video placeholders */
+      .video-placeholder {
+         position: absolute;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         background-color: #f5f5f5; /* Light gray placeholder */
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         z-index: 1;
+         opacity: 0.8;
+         transition: opacity 0.5s ease;
+      }
+      
+      .video-placeholder::after {
+         content: "";
+         width: 40px;
+         height: 40px;
+         border: 3px solid rgba(0, 0, 0, 0.1);
+         border-top-color: #333;
+         border-radius: 50%;
+         animation: loading-spinner 1s infinite linear;
+      }
+      
+      @keyframes loading-spinner {
+         to {
+            transform: rotate(360deg);
+         }
+      }
+      
+      /* Lazy video loading */
+      .lazy-video {
+         opacity: 0;
+         transition: opacity 0.5s ease;
+      }
+      
+      .lazy-video.loaded {
+         opacity: 1;
+      }
+      
+      /* Optimize fonts */
+      /* Add font-display: swap to optimize font loading */
+      @font-face {
+         font-family: 'Cormorant Garamond';
+         font-display: swap;
+      }
+      
+      @font-face {
+         font-family: 'Montserrat';
+         font-display: swap;
+      }
+      
+      /* Critical CSS to prevent layout shift */
+      .hero {
+         height: 100vh;
+         min-height: 500px;
+      }
+      
+      .video-container, .video-wrapper {
+         aspect-ratio: 16/9;
+      }
+      
+      .about-video {
+         aspect-ratio: 4/3;
+      }
+      
+      /* Preconnect to external resources */
+      @media (min-width: 768px) {
+         .collection-categories {
+            display: flex;
+            gap: 20px;
+         }
+         
+         .category {
+            flex: 1;
+         }
+      }
+   </style>
+   <!-- Preconnect to Google Fonts to speed up loading -->
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   
+   <!-- Preload hero video for faster initial load -->
+   <link rel="preload" href="assets/video/hero-video.mp4" as="video" type="video/mp4" media="(min-width: 768px)">
+   <link rel="preload" href="assets/video/hero-video-vertical.mp4" as="video" type="video/mp4" media="(max-width: 767px)">
 </head>
 <body>
    <!-- Announcement Bar -->
@@ -25,19 +159,12 @@
            <a href="/" class="brand-logo">HABS COLLECTION</a>
        </div>
        <div class="nav-right">
-           <a href="#search" class="nav-icon">Search</a>
-           <a href="#account" class="nav-icon">Account</a>
+           <a href="/account.html" class="nav-icon">Account</a>
            <a href="cart.html" class="nav-icon">Cart (0)</a>
        </div>
 
        <div class="mobile-nav-right">
-           <a href="#search" class="nav-icon">
-               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                   <circle cx="11" cy="11" r="8"></circle>
-                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-               </svg>
-           </a>
-           <a href="#account" class="nav-icon">
+           <a href="/account.html" class="nav-icon">
                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                    <circle cx="12" cy="7" r="4"></circle>
@@ -69,8 +196,7 @@
        <!-- <a href="#shop">SHOP</a> -->
         <!-- <a href="#new">NEW IN</a> -->
         <a href="products.html">EID-AL FITR COLLECTION - Limited Edition</a>
-        <a href="#search">Search</a>
-        <a href="#account">Account</a>
+        <a href="/account.html">Account</a>
         <a href="cart.html">Cart (0)</a>
     </div>
 
@@ -78,11 +204,11 @@
        <!-- Hero Section -->
        <section class="hero">
         <div class="video-container">
-            <video autoplay muted loop webkit-playsinline class="landscape-video">
+            <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="landscape-video" preload="metadata">
                 <source src="assets/video/hero-video.mp4" type="video/mp4">
                 <source src="assets/video/hero-video.webm" type="video/webm">
             </video>
-            <video autoplay muted loop class="vertical-video">
+            <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="vertical-video" preload="metadata">
                 <source src="assets/video/hero-video-vertical.mp4" type="video/mp4">
             </video>
             <div class="overlay"></div>
@@ -104,8 +230,9 @@
        <section class="collection-categories">
            <div class="category">
                <div class="video-wrapper">
-                   <video autoplay muted loop>
-                       <source src="assets/video/Abaya 1.mp4" type="video/mp4">
+                   <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="lazy-video" preload="none" data-src="assets/video/Abaya 1.mp4">
+                       <!-- Placeholder until video loads -->
+                       <div class="video-placeholder"></div>
                    </video>
                    <div class="overlay"></div>
                </div>
@@ -114,8 +241,9 @@
            </div>
            <div class="category">
                <div class="video-wrapper">
-                   <video autoplay muted loop>
-                       <source src="assets/video/Abaya 2.mp4" type="video/mp4">
+                   <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="lazy-video" preload="none" data-src="assets/video/Abaya 2.mp4">
+                       <!-- Placeholder until video loads -->
+                       <div class="video-placeholder"></div>
                    </video>
                    <div class="overlay"></div>
                </div>
@@ -129,53 +257,56 @@
 <!-- Add this after your hero section -->
 <section class="product-feature">
    <h2 class="section-title">SHOP OUR LATEST COLLECTION</h2>
-   <div class="product-grid">
-       <a href="/products/black-aztec.html" class="product-card">
-           <div class="product-image">
-               <img src="/assets/images/products/black-aztec.jpg" alt="Black Aztec" class="main-image" onload="this.classList.add('loaded')">
-               <img src="/assets/images/products/black-aztec-hover.jpg" alt="Black Aztec Hover" class="hover-image" onload="this.classList.add('loaded')">
-           </div>
-           <div class="product-info">
-               <h3>Black Aztec</h3>
-               <p class="price">£145.00</p>
-           </div>
-       </a>
-   
-       <a href="/products/sovereign-yellow.html" class="product-card">
-           <div class="product-image">
-               <img src="/assets/images/products/sovereign-yellow.jpg" alt="Sovereign Yellow Abaya" class="main-image" onload="this.classList.add('loaded')">
-               <img src="/assets/images/products/sovereign-yellow-hover.jpg" alt="Sovereign Yellow Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
-           </div>
-           <div class="product-info">
-               <h3>Sovereign Yellow</h3>
-               <p class="price">£200.00</p>
-           </div>
-       </a>
-   
-       <a href="/products/jacquard-gold-no-collar.html" class="product-card">
-           <div class="product-image">
-               <img src="/assets/images/products/jacquard-gold-no-collar.jpg" alt="Jacquard Gold No Collar Abaya" class="main-image" onload="this.classList.add('loaded')">
-               <img src="/assets/images/products/jacquard-gold-no-collar-hover.jpg" alt="Jacquard Gold No Collar Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
-           </div>
-           <div class="product-info">
-               <h3>Jacquard Gold No Collar</h3>
-               <p class="price">£145.00</p>
-           </div>
-       </a>
-   
- <!-- 
-     <a href="/products/umber-mustard" class="product-card">
-           <div class="product-image">
-               <img src="assets/images/products/green-linen-abaya4.jpg" alt="Umber Mustard Abaya" class="main-image" onload="this.classList.add('loaded')">
-               <img src="assets/images/products/green-linen-abaya4-hover.jpg" alt="Umber Mustard Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
-           </div>
-           <div class="product-info">
-               <h3>Umber Mustard</h3>
-               <p class="price">£299.00</p>
-           </div>
-    </a>
-     -->
-
+   <div class="mobile-carousel-container">
+       <button class="carousel-arrow prev" title="Previous product">
+           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <polyline points="15 18 9 12 15 6"></polyline>
+           </svg>
+       </button>
+       <button class="carousel-arrow next" title="Next product">
+           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <polyline points="9 18 15 12 9 6"></polyline>
+           </svg>
+       </button>
+       <div class="product-grid">
+           <a href="/products/black-aztec.html" class="product-card">
+               <div class="product-image">
+                   <img src="/assets/images/products/black-aztec.jpg" alt="Black Aztec" class="main-image" onload="this.classList.add('loaded')">
+                   <img src="/assets/images/products/black-aztec-hover.jpg" alt="Black Aztec Hover" class="hover-image" onload="this.classList.add('loaded')">
+               </div>
+               <div class="product-info">
+                   <h3>Black Aztec</h3>
+                   <p class="price">£145.00</p>
+               </div>
+           </a>
+       
+           <a href="/products/sovereign-yellow.html" class="product-card">
+               <div class="product-image">
+                   <img src="/assets/images/products/sovereign-yellow.jpg" alt="Sovereign Yellow Abaya" class="main-image" onload="this.classList.add('loaded')">
+                   <img src="/assets/images/products/sovereign-yellow-hover.jpg" alt="Sovereign Yellow Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
+               </div>
+               <div class="product-info">
+                   <h3>Sovereign Yellow</h3>
+                   <p class="price">£200.00</p>
+               </div>
+           </a>
+       
+           <a href="/products/jacquard-gold-no-collar.html" class="product-card">
+               <div class="product-image">
+                   <img src="/assets/images/products/jacquard-gold-no-collar.jpg" alt="Jacquard Gold No Collar Abaya" class="main-image" onload="this.classList.add('loaded')">
+                   <img src="/assets/images/products/jacquard-gold-no-collar-hover.jpg" alt="Jacquard Gold No Collar Abaya Hover" class="hover-image" onload="this.classList.add('loaded')">
+               </div>
+               <div class="product-info">
+                   <h3>Jacquard Gold No Collar</h3>
+                   <p class="price">£145.00</p>
+               </div>
+           </a>
+       </div>
+       <div class="carousel-dots">
+           <button class="carousel-dot active" data-slide="0" title="Product 1"></button>
+           <button class="carousel-dot" data-slide="1" title="Product 2"></button>
+           <button class="carousel-dot" data-slide="2" title="Product 3"></button>
+       </div>
    </div>
 <section>
 
@@ -183,10 +314,9 @@
 <section class="about-section">
     <div class="about-container">
         <div class="about-video">
-            <video autoplay muted loop>
-                <source src="assets/video/BTS. about-video.mp4" type="video/mp4">
-                <source src="assets/video/BTS. about-video.mp4" type="video/webm">
-                Your browser does not support the video tag.
+            <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="lazy-video" preload="none" data-src="assets/video/BTS. about-video.mp4">
+                <!-- Placeholder until video loads -->
+                <div class="video-placeholder"></div>
             </video>
         </div>
         <div class="about-content">
@@ -312,6 +442,247 @@
     mobileMenuLinks.forEach(link => {
         link.addEventListener('click', toggleMobileMenu);
     });
+    
+    // Product Feature Carousel Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const productGrid = document.querySelector('.product-feature .product-grid');
+        const prevButton = document.querySelector('.carousel-arrow.prev');
+        const nextButton = document.querySelector('.carousel-arrow.next');
+        const dots = document.querySelectorAll('.carousel-dot');
+        const cards = document.querySelectorAll('.product-card');
+        let currentSlide = 0;
+        
+        // Only initialize carousel on mobile
+        if (window.innerWidth <= 768) {
+            // Initially show arrows if multiple cards
+            if (cards.length > 1) {
+                prevButton.style.display = 'flex';
+                nextButton.style.display = 'flex';
+            } else {
+                prevButton.style.display = 'none';
+                nextButton.style.display = 'none';
+            }
+            
+            // Handle next button click
+            nextButton.addEventListener('click', function() {
+                if (currentSlide < cards.length - 1) {
+                    currentSlide++;
+                    updateCarousel();
+                }
+            });
+            
+            // Handle prev button click
+            prevButton.addEventListener('click', function() {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateCarousel();
+                }
+            });
+            
+            // Handle dot clicks
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', function() {
+                    currentSlide = index;
+                    updateCarousel();
+                });
+            });
+            
+            // Update carousel position and indicators
+            function updateCarousel() {
+                // Update slider position
+                const offset = currentSlide * -100;
+                productGrid.style.transform = `translateX(${offset}%)`;
+                
+                // Update dots
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentSlide);
+                });
+                
+                // Update arrow visibility
+                prevButton.style.opacity = currentSlide === 0 ? '0.5' : '1';
+                nextButton.style.opacity = currentSlide === cards.length - 1 ? '0.5' : '1';
+            }
+            
+            // Add swipe functionality
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            productGrid.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+            
+            productGrid.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            });
+            
+            function handleSwipe() {
+                const swipeThreshold = 50;
+                if (touchEndX < touchStartX - swipeThreshold) {
+                    // Swipe left
+                    if (currentSlide < cards.length - 1) {
+                        currentSlide++;
+                        updateCarousel();
+                    }
+                } else if (touchEndX > touchStartX + swipeThreshold) {
+                    // Swipe right
+                    if (currentSlide > 0) {
+                        currentSlide--;
+                        updateCarousel();
+                    }
+                }
+            }
+            
+            // Initial carousel setup
+            updateCarousel();
+        } else {
+            // Hide arrows on desktop
+            if (prevButton) prevButton.style.display = 'none';
+            if (nextButton) nextButton.style.display = 'none';
+            
+            // Hide dots on desktop
+            dots.forEach(dot => {
+                dot.style.display = 'none';
+            });
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                if (cards.length > 1) {
+                    prevButton.style.display = 'flex';
+                    nextButton.style.display = 'flex';
+                    dots.forEach(dot => {
+                        dot.style.display = 'block';
+                    });
+                }
+            } else {
+                prevButton.style.display = 'none';
+                nextButton.style.display = 'none';
+                dots.forEach(dot => {
+                    dot.style.display = 'none';
+                });
+                
+                // Reset transform on desktop
+                productGrid.style.transform = 'translateX(0)';
+            }
+        });
+    });
+    
+    // Ensure videos play correctly across all devices
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select all videos
+        const videos = document.querySelectorAll('video');
+        const lazyVideos = document.querySelectorAll('.lazy-video');
+        
+        // Set up Intersection Observer for lazy loading videos
+        const videoObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const video = entry.target;
+                    const videoSrc = video.dataset.src;
+                    
+                    if (videoSrc) {
+                        // Create and append source element
+                        const source = document.createElement('source');
+                        source.src = videoSrc;
+                        source.type = 'video/mp4';
+                        
+                        // Remove placeholder if exists
+                        const placeholder = video.querySelector('.video-placeholder');
+                        if (placeholder) {
+                            placeholder.style.opacity = '0';
+                            setTimeout(() => {
+                                placeholder.remove();
+                            }, 500);
+                        }
+                        
+                        // Add source and load video
+                        video.appendChild(source);
+                        video.load();
+                        video.classList.add('loaded');
+                        
+                        // Auto play video once loaded
+                        video.play().catch(e => {
+                            console.log('Auto-play was prevented for lazy-loaded video');
+                        });
+                        
+                        // Stop observing once loaded
+                        observer.unobserve(video);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '100px 0px', // Load videos 100px before they enter viewport
+            threshold: 0
+        });
+        
+        // Apply observer to all lazy videos
+        lazyVideos.forEach(video => {
+            videoObserver.observe(video);
+        });
+        
+        // Function to start playing videos
+        function playVideos() {
+            videos.forEach(video => {
+                // Reset video if it's paused
+                if (video.paused && !video.classList.contains('lazy-video')) {
+                    video.play().catch(e => {
+                        console.log('Auto-play was prevented for a video');
+                    });
+                }
+            });
+        }
+        
+        // Play non-lazy videos when page loads
+        playVideos();
+        
+        // Restart videos that might have been paused when page becomes visible again
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                setTimeout(playVideos, 300);
+            }
+        });
+        
+        // Handle iOS touch to enable playback
+        document.addEventListener('touchstart', function() {
+            playVideos();
+        }, {once: true});
+        
+        // Force video reset on orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(function() {
+                videos.forEach(video => {
+                    if (!video.classList.contains('lazy-video') || video.classList.contains('loaded')) {
+                        // Force reset of video
+                        const currentTime = video.currentTime;
+                        video.load();
+                        video.currentTime = currentTime;
+                        video.play().catch(e => {
+                            console.log('Could not restart video after orientation change');
+                        });
+                    }
+                });
+            }, 500);
+        });
+    });
+    
+    // Defer loading of non-critical resources
+    function loadDeferredResources() {
+        // Add any additional resources that should be loaded after page load
+        
+        // Example: Load additional scripts
+        // const script = document.createElement('script');
+        // script.src = '/path/to/non-critical-script.js';
+        // document.body.appendChild(script);
+    }
+    
+    // Load deferred resources after page load
+    if (window.requestIdleCallback) {
+        requestIdleCallback(loadDeferredResources);
+    } else {
+        setTimeout(loadDeferredResources, 2000);
+    }
 </script>
 
 

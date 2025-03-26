@@ -117,7 +117,34 @@ async function generateMainProductsPage() {
         
         @media (max-width: 640px) {
             .products-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .product-info h3 {
+                font-size: 14px;
+                margin-bottom: 3px;
+            }
+            
+            .product-info .price {
+                font-size: 14px;
+            }
+            
+            .collection-header {
+                padding: 20px 15px;
+            }
+            
+            .collection-header h1 {
+                font-size: 28px;
+                margin-bottom: 8px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .products-grid {
+                gap: 8px;
+                padding: 8px;
             }
         }
     </style>
@@ -135,19 +162,12 @@ async function generateMainProductsPage() {
             <a href="/" class="brand-logo">HABS COLLECTION</a>
         </div>
         <div class="nav-right">
-            <a href="#search" class="nav-icon">Search</a>
-            <a href="#account" class="nav-icon">Account</a>
+            <a href="/account.html" class="nav-icon">Account</a>
             <a href="/cart.html" class="nav-icon">Cart (<span class="cart-count">0</span>)</a>
         </div>
         
         <div class="mobile-nav-right">
-            <a href="#search" class="nav-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-            </a>
-            <a href="#account" class="nav-icon">
+            <a href="/account.html" class="nav-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
@@ -177,8 +197,7 @@ async function generateMainProductsPage() {
     <div class="mobile-menu">
         <button class="mobile-menu-close">&times;</button>
         <a href="/products.html">EID-AL FITR COLLECTION - Limited Edition</a>
-        <a href="#search">Search</a>
-        <a href="#account">Account</a>
+        <a href="/account.html">Account</a>
         <a href="/cart.html">Cart (<span class="mobile-cart-count">0</span>)</a>
         <a href="/index.html" class="mobile-home-link">Home</a>
     </div>
@@ -258,14 +277,7 @@ async function generateMainProductsPage() {
                     <p>© 2024 - HABS COLLECTION</p>
                 </div>
                 <div class="footer-right">
-                    <div class="payment-methods">
-                        <img src="/assets/images/payment/visa.png" alt="Visa">
-                        <img src="/assets/images/payment/mastercard.png" alt="Mastercard">
-                        <img src="/assets/images/payment/amex.png" alt="American Express">
-                        <img src="/assets/images/payment/paypal.png" alt="PayPal">
-                        <img src="/assets/images/payment/apple-pay.png" alt="Apple Pay">
-                        <img src="/assets/images/payment/google-pay.png" alt="Google Pay">
-                    </div>
+                    <!-- Payment methods removed as requested -->
                 </div>
             </div>
         </div>
