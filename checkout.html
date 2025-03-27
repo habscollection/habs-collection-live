@@ -417,20 +417,20 @@
     </script>
     <script>
         // Set Stripe publishable key with API fallback
-        window.STRIPE_PUBLISHABLE_KEY = 'pk_test_51QJdt2Cry5lXoDcXQc003PQPE0e1EmCSuAbbZDQ6nIFPrj8ifipJ75GtNN5RDCVwioX4lIQMzPFYtdUnYhfyySrT00QULySgWD';
+        window.STRIPE_PUBLISHABLE_KEY = null; // Will be fetched from server endpoint
         
-        // Try to fetch from API as well to ensure it's working
+        // Fetch key from server
         fetch('/api/stripe/config')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch Stripe configuration');
+                return response.json();
+            })
             .then(data => {
                 console.log('Successfully connected to Stripe API');
-                // Only update if we got a valid key from server
-                if (data.publishableKey && data.publishableKey.startsWith('pk_')) {
-                    window.STRIPE_PUBLISHABLE_KEY = data.publishableKey;
-                }
+                window.STRIPE_PUBLISHABLE_KEY = data.publishableKey;
             })
             .catch(error => {
-                console.log('Using fallback Stripe key, API fetch failed:', error);
+                console.log('Error fetching Stripe key:', error);
             });
     </script>
 </body>

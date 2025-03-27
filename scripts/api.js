@@ -4,7 +4,7 @@ const api = {
     async getAllProducts() {
         try {
             console.log('Fetching all products...');
-            const response = await fetch('./api/products');
+            const response = await fetch('/api/products');
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to fetch products');
@@ -20,7 +20,7 @@ const api = {
     async getProduct(slug) {
         try {
             console.log(`Fetching product with slug: ${slug}`);
-            const response = await fetch(`./api/products/${slug}`);
+            const response = await fetch(`/api/products/${slug}`);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to fetch product');
@@ -47,7 +47,7 @@ const api = {
                 throw new Error('Invalid size');
             }
             
-            const url = `./api/products/${productId}/stock?size=${size}`;
+            const url = `/api/products/${productId}/stock?size=${size}`;
             console.log(`[DEBUG API] Making request to: ${url}`);
             
             const response = await fetch(url);
@@ -78,7 +78,7 @@ const api = {
     // Update stock level for a product
     async updateStock(productId, size, quantity) {
         try {
-            const response = await fetch(`./api/products/${productId}/stock`, {
+            const response = await fetch(`/api/products/${productId}/stock`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ const api = {
     async getCartItems() {
         try {
             console.log('[DEBUG API] Fetching cart items...');
-            const url = './api/cart';
+            const url = '/api/cart';
             console.log('[DEBUG API] Request URL:', url);
             
             const response = await fetch(url);
@@ -156,7 +156,7 @@ const api = {
 
             console.log('[DEBUG API] Prepared cart item for API:', itemToAdd);
             
-            const url = './api/cart';
+            const url = '/api/cart';
             console.log('[DEBUG API] Request URL:', url);
             
             const response = await fetch(url, {
@@ -224,7 +224,7 @@ const api = {
     async updateCartItem(itemId, updates) {
         try {
             console.log(`Updating cart item ${itemId}:`, updates);
-            const response = await fetch(`./api/cart/${itemId}`, {
+            const response = await fetch(`/api/cart/${itemId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -256,7 +256,7 @@ const api = {
     async removeCartItem(itemId, size) {
         try {
             console.log(`Removing cart item ${itemId} with size ${size}`);
-            const response = await fetch(`./api/cart/${itemId}`, {
+            const response = await fetch(`/api/cart/${itemId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ const api = {
             }
             
             const result = await response.json();
-            console.log('Item removed from cart successfully:', result);
+            console.log('Cart item removed successfully:', result);
             return result;
         } catch (error) {
             console.error('Error removing cart item:', error);
@@ -288,7 +288,7 @@ const api = {
     async clearCart() {
         try {
             console.log('Clearing cart...');
-            const response = await fetch('./api/cart', {
+            const response = await fetch('/api/cart', {
                 method: 'DELETE'
             });
             
@@ -315,7 +315,7 @@ const api = {
     // Create payment intent with Stripe
     async createPaymentIntent(amount) {
         try {
-            const response = await fetch('./api/create-payment-intent', {
+            const response = await fetch('/api/create-payment-intent', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -336,7 +336,7 @@ const api = {
     // Create order in MongoDB
     async createOrder(orderData) {
         try {
-            const response = await fetch('./api/orders', {
+            const response = await fetch('/api/orders', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -358,7 +358,7 @@ const api = {
     async getCartTotal() {
         try {
             console.log('Fetching cart total...');
-            const response = await fetch('./api/cart/total');
+            const response = await fetch('/api/cart/total');
             
             if (!response.ok) {
                 let errorData;

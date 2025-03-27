@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 
                 // Create payment intent
-                const paymentIntentResponse = await fetch('/create-payment-intent', {
+                const paymentIntentResponse = await fetch('/api/create-payment-intent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
