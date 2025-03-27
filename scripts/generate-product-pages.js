@@ -903,8 +903,11 @@ async function generateProductPages() {
 }
 
 module.exports = {
-    generateProductHTML
+    generateProductHTML,
+    generateProductPages
 };
 
-// Run the generator
-generateProductPages(); 
+// Run the generator only if this file is executed directly (not imported)
+if (require.main === module) {
+    generateProductPages();
+} 
