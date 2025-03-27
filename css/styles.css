@@ -3581,7 +3581,7 @@ body.cart-open {
 .success-page {
     padding: 4rem 2rem;
     max-width: 800px;
-    margin: 0 auto;
+    margin: 80px auto 0; /* Added top margin of 80px */
 }
 
 .success-container {
@@ -3727,6 +3727,7 @@ body.cart-open {
 @media (max-width: 768px) {
     .success-page {
         padding: 2rem 1rem;
+        margin-top: 60px; /* Added top margin for mobile */
     }
 
     .success-container {
