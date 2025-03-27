@@ -163,12 +163,36 @@ app.post('/api/orders', async (req, res) => {
     try {
         const { items, shipping, payment, subtotal, total, userId } = req.body;
         
+        // Verify the payment status
+        if (!payment || !payment.transactionId) {
+            return res.status(400).json({ error: 'Payment information is missing' });
+        }
+        
+        // Verify payment with Stripe
+        try {
+            const paymentIntent = await stripe.paymentIntents.retrieve(payment.transactionId);
+            
+            // Only proceed if payment is successful
+            if (paymentIntent.status !== 'succeeded') {
+                return res.status(400).json({ 
+                    error: 'Payment has not been completed successfully',
+                    paymentStatus: paymentIntent.status 
+                });
+            }
+            
+            console.log(`Verified payment: ${payment.transactionId} with status: ${paymentIntent.status}`);
+        } catch (stripeError) {
+            console.error('Error verifying payment with Stripe:', stripeError);
+            return res.status(400).json({ error: 'Could not verify payment with Stripe' });
+        }
+        
         const orderData = {
             items,
             shipping,
             payment,
             subtotal,
-            total
+            total,
+            status: 'paid' // Set status to paid since payment is verified
         };
         
         // If user is logged in, associate order with user
@@ -258,6 +282,177 @@ app.post('/payment-success', async (req, res) => {
         res.json({ success: true });
     } catch (error) {
         console.error('Payment success webhook error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Stripe webhook endpoint
+app.post('/stripe-webhook', express.raw({type: 'application/json'}), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    console.log('Received Stripe webhook');
+    
+    // Verify webhook signature
+    let event;
+    try {
+        if (!endpointSecret) {
+            return res.status(400).json({ error: 'Webhook signing secret is not configured' });
+        }
+        
+        try {
+            event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+        } catch (err) {
+            console.error(`Webhook signature verification failed: ${err.message}`);
+            return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
+        
+        // Handle the event
+        switch (event.type) {
+            case 'payment_intent.succeeded':
+                const paymentIntent = event.data.object;
+                console.log(`Payment succeeded: ${paymentIntent.id}`);
+                
+                // Try to find an order that matches this payment
+                try {
+                    const order = await Order.findOne({ 'payment.transactionId': paymentIntent.id });
+                    
+                    if (order) {
+                        // Update order status
+                        order.status = 'paid';
+                        order.paymentDate = new Date();
+                        await order.save();
+                        
+                        console.log(`Updated order ${order._id} status to paid`);
+                        
+                        // Send confirmation email
+                        await sendOrderConfirmation(order);
+                    } else {
+                        console.log(`No order found for payment ${paymentIntent.id}`);
+                    }
+                } catch (orderError) {
+                    console.error('Error updating order from webhook:', orderError);
+                }
+                break;
+                
+            case 'payment_intent.payment_failed':
+                const failedPayment = event.data.object;
+                console.log(`Payment failed: ${failedPayment.id}`);
+                
+                // Try to find an order that matches this payment
+                try {
+                    const order = await Order.findOne({ 'payment.transactionId': failedPayment.id });
+                    
+                    if (order) {
+                        // Update order status
+                        order.status = 'cancelled';
+                        order.cancellationReason = 'Payment failed';
+                        await order.save();
+                        
+                        console.log(`Updated order ${order._id} status to cancelled due to payment failure`);
+                    } else {
+                        console.log(`No order found for failed payment ${failedPayment.id}`);
+                    }
+                } catch (orderError) {
+                    console.error('Error updating order for failed payment:', orderError);
+                }
+                break;
+
+            case 'payment_intent.processing':
+                const processingIntent = event.data.object;
+                console.log(`Payment processing: ${processingIntent.id}`);
+                
+                try {
+                    const order = await Order.findOne({ 'payment.transactionId': processingIntent.id });
+                    
+                    if (order) {
+                        // Update order status to processing
+                        order.status = 'processing';
+                        await order.save();
+                        
+                        console.log(`Updated order ${order._id} status to processing`);
+                    } else {
+                        console.log(`No order found for processing payment ${processingIntent.id}`);
+                    }
+                } catch (orderError) {
+                    console.error('Error updating order for processing payment:', orderError);
+                }
+                break;
+                
+            case 'payment_intent.canceled':
+                const canceledIntent = event.data.object;
+                console.log(`Payment canceled: ${canceledIntent.id}`);
+                
+                try {
+                    const order = await Order.findOne({ 'payment.transactionId': canceledIntent.id });
+                    
+                    if (order) {
+                        // Update order status to cancelled
+                        order.status = 'cancelled';
+                        await order.save();
+                        
+                        console.log(`Updated order ${order._id} status to cancelled due to payment cancellation`);
+                    } else {
+                        console.log(`No order found for canceled payment ${canceledIntent.id}`);
+                    }
+                } catch (orderError) {
+                    console.error('Error updating order for canceled payment:', orderError);
+                }
+                break;
+                
+            case 'charge.succeeded':
+                const successfulCharge = event.data.object;
+                console.log(`Charge succeeded: ${successfulCharge.id}, for payment intent: ${successfulCharge.payment_intent}`);
+                
+                // If you want to update the order based on the charge, you'd need to find it by payment intent
+                if (successfulCharge.payment_intent) {
+                    try {
+                        const order = await Order.findOne({ 'payment.transactionId': successfulCharge.payment_intent });
+                        
+                        if (order) {
+                            console.log(`Found order ${order._id} for successful charge ${successfulCharge.id}`);
+                            // No need to modify the order here since we're not changing the schema
+                        } else {
+                            console.log(`No order found for successful charge ${successfulCharge.id}`);
+                        }
+                    } catch (orderError) {
+                        console.error('Error finding order for successful charge:', orderError);
+                    }
+                }
+                break;
+                
+            case 'charge.failed':
+                const failedCharge = event.data.object;
+                console.log(`Charge failed: ${failedCharge.id}, for payment intent: ${failedCharge.payment_intent}`);
+                console.log(`Failure reason: ${failedCharge.failure_message}`);
+                
+                if (failedCharge.payment_intent) {
+                    try {
+                        const order = await Order.findOne({ 'payment.transactionId': failedCharge.payment_intent });
+                        
+                        if (order) {
+                            // Update order status to cancelled
+                            order.status = 'cancelled';
+                            await order.save();
+                            
+                            console.log(`Updated order ${order._id} status to cancelled due to failed charge`);
+                        } else {
+                            console.log(`No order found for failed charge ${failedCharge.id}`);
+                        }
+                    } catch (orderError) {
+                        console.error('Error updating order for failed charge:', orderError);
+                    }
+                }
+                break;
+                
+            default:
+                console.log(`Unhandled event type: ${event.type}`);
+        }
+        
+        // Return success
+        res.json({ received: true });
+    } catch (error) {
+        console.error('Stripe webhook error:', error);
         res.status(500).json({ error: error.message });
     }
 });

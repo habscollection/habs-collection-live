@@ -329,6 +329,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const cartTotal = document.querySelector('.order-summary-total').dataset.total;
                 const amount = parseFloat(cartTotal);
                 
+                alert('Starting payment processing with amount: ' + amount);
+                
                 // Get cart items
                 const cartItems = window.cart ? window.cart.items : JSON.parse(localStorage.getItem('cart') || '[]');
                 
@@ -377,6 +379,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 
                 if (paymentResult.paymentIntent.status !== 'succeeded') {
+                    alert('Payment status: ' + paymentResult.paymentIntent.status + ' - Not successful. Will show error.');
                     throw new Error(`Payment status: ${paymentResult.paymentIntent.status}`);
                 }
                 
@@ -398,7 +401,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                         },
                         payment: {
                             method: 'card',
-                            transactionId: paymentResult.paymentIntent.id
+                            transactionId: paymentResult.paymentIntent.id,
+                            status: paymentResult.paymentIntent.status
                         },
                         subtotal: amount,
                         total: amount
@@ -434,6 +438,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 } catch (clearError) {
                     console.error('[DEBUG CHECKOUT] Error clearing cart:', clearError);
                 }
+                
+                // Add alert to confirm payment was successful
+                alert('Payment processed successfully! Redirecting to order confirmation page.');
                 
                 // Redirect to success page
                 setTimeout(() => {
