@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { sendOrderConfirmation } = require('../utils/emailService');
 
 // POST /api/orders - Create a new order
@@ -14,18 +15,66 @@ router.post('/', async (req, res) => {
             status
         } = req.body;
 
+        // Verify payment intent exists and is succeeded
+        if (paymentIntentId) {
+            try {
+                const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+                
+                if (paymentIntent.status !== 'succeeded') {
+                    return res.status(400).json({ 
+                        error: 'Payment has not been completed successfully',
+                        paymentStatus: paymentIntent.status 
+                    });
+                }
+                
+                console.log(`Verified payment: ${paymentIntentId} with status: ${paymentIntent.status}`);
+            } catch (stripeError) {
+                console.error('Error verifying payment with Stripe:', stripeError);
+                return res.status(400).json({ error: 'Could not verify payment with Stripe' });
+            }
+        } else {
+            return res.status(400).json({ error: 'Payment intent ID is required' });
+        }
+
         // Generate order ID
         const orderId = 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+        // Create payment object
+        const payment = {
+            method: 'card',
+            transactionId: paymentIntentId,
+            status: 'succeeded'
+        };
+
+        // Create shipping object from customer data
+        const shipping = {
+            firstName: customer.firstName,
+            lastName: customer.lastName,
+            email: customer.email,
+            phone: customer.phone,
+            address: customer.address,
+            city: customer.city,
+            postcode: customer.postcode,
+            country: customer.country
+        };
+
+        // Calculate subtotal from items
+        let subtotal = 0;
+        if (items && items.length > 0) {
+            subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
 
         // Create new order
         const order = new Order({
             orderId,
             paymentIntentId,
             userId: req.session.userId,
-            items,
-            customer,
-            total,
-            status,
+            items: items || [],
+            shipping,
+            payment,
+            subtotal: subtotal || total,
+            total: total,
+            status: status || 'paid',
             createdAt: new Date()
         });
 

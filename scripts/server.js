@@ -241,7 +241,32 @@ app.get('/api/orders/:id', async (req, res) => {
 // Create a payment intent
 app.post('/create-payment-intent', async (req, res) => {
     try {
-        const { amount } = req.body;
+        const { amount, orderData } = req.body;
+
+        // Prepare metadata for the payment intent
+        const metadata = {
+            userId: req.session.userId || 'guest'
+        };
+
+        // Add order data to metadata if provided
+        if (orderData) {
+            // Store customer information in metadata
+            metadata.customerFirstName = orderData.customer.firstName;
+            metadata.customerLastName = orderData.customer.lastName;
+            metadata.customerEmail = orderData.customer.email;
+            metadata.customerPhone = orderData.customer.phone;
+            metadata.customerAddress = orderData.customer.address;
+            metadata.customerCity = orderData.customer.city;
+            metadata.customerPostcode = orderData.customer.postcode;
+            metadata.customerCountry = orderData.customer.country;
+            
+            // Store the cart items in a temporary session if available
+            if (req.session) {
+                req.session.pendingOrderData = orderData;
+                req.session.pendingOrderAmount = amount;
+                console.log('Stored pending order data in session');
+            }
+        }
 
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(amount * 100), // Convert to cents
@@ -249,11 +274,15 @@ app.post('/create-payment-intent', async (req, res) => {
             automatic_payment_methods: {
                 enabled: true,
             },
+            metadata: metadata
         });
 
-        res.json({ clientSecret: paymentIntent.client_secret });
+        res.json({
+            clientSecret: paymentIntent.client_secret
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error creating payment intent:', error);
+        res.status(500).json({ error: 'Failed to create payment intent' });
     }
 });
 
