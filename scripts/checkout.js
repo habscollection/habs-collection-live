@@ -288,6 +288,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 subtotalElement.textContent = `£${subtotal.toFixed(2)}`;
                 shippingElement.textContent = shippingCost === 0 ? 'FREE' : `£${shippingCost.toFixed(2)}`;
                 totalElement.textContent = `£${total.toFixed(2)}`;
+                totalElement.classList.add('order-summary-total');
+                totalElement.dataset.total = total.toFixed(2);
 
                 console.log('[DEBUG CHECKOUT] Order summary updated successfully');
                 return { subtotal, shipping: shippingCost, total };
