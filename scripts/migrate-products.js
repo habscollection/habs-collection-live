@@ -1,13 +1,21 @@
 require('dotenv').config();
 const connectDB = require('./database');
 const Product = require('../models/Product');
+const mongoose = require('mongoose');
+
+// Add graceful shutdown handler
+process.on('SIGINT', async () => {
+    console.log('\nReceived SIGINT. Closing MongoDB connection and exiting...');
+    await mongoose.connection.close();
+    process.exit(0);
+});
 
 // Define all products with initial stock levels
 const products = [
     {
         id: 1,
         name: "Printed Plush Green - Light",
-        price: 170.00,
+        price: 130.00,
         description: "Elegant italian printed fabric, heavyweight satin-like feel, soft and breathable ",
         images: {
             main: "/assets/images/products/printed-plush-green.jpg",
@@ -35,7 +43,7 @@ const products = [
     {
         id: 2,
         name: "Printed Plush Green - Dark",
-        price: 170.00,
+        price: 130.00,
         description: "Elegant italian printed fabric, heavyweight satin-like feel, soft and breathable ",
         images: {
             main: "/assets/images/products/printed-plush-green-dark.jpg",
@@ -63,7 +71,7 @@ const products = [
     {
         id: 3,
         name: "Sovereign Yellow",
-        price: 190.00,
+        price: 140.00,
         description: "Luxurious yellow abaya with intricate detailing",
         images: {
             main: "/assets/images/products/sovereign-yellow.jpg",
@@ -91,7 +99,7 @@ const products = [
     {
         id: 4,
         name: "Lightweight Brown",
-        price: 130.00,
+        price: 70.00,
         description: "Classical brown abaya with intricate detailing",
         images: {
             main: "/assets/images/products/lightweight-brown.jpg",
@@ -119,7 +127,7 @@ const products = [
     {
         id: 5,
         name: "Black Aztec",
-        price: 145,
+        price: 140,
         description: "Sophisticated structured black aztec abaya with subtle details",
         images: {
             main: "/assets/images/products/black-aztec.jpg",
@@ -147,7 +155,7 @@ const products = [
     {
         id: 6,
         name: "Princess Satin",
-        price: 145.00,
+        price: 160.00,
         description: "Majestic pink satin abaya with gold thread embellishments",
         images: {
             main: "/assets/images/products/princess-satin.jpg",
@@ -175,7 +183,7 @@ const products = [
     {
         id: 7,
         name: "Jacquard Gold with Collar",
-        price: 150.00,
+        price: 130.00,
         description: "Luxurious gold jacquard abaya with handcrafted collar",
         images: {
             main: "/assets/images/products/jacquard-gold.jpg",
@@ -203,7 +211,7 @@ const products = [
     {
         id: 8,
         name: "Jacquard Gold",
-        price: 145.00,
+        price: 125.00,
         description: "Luxurious gold jacquard abaya without collar",
         images: {
             main: "/assets/images/products/jacquard-gold-no-collar.jpg",
@@ -231,7 +239,7 @@ const products = [
     {
         id: 9,
         name: "Silk Satin Trench",
-        price: 150.00,
+        price: 130.00,
         description: "Trench style black satin abaya with pockets",
         images: {
             main: "/assets/images/products/silk-satin-trench.jpg",
@@ -258,7 +266,7 @@ const products = [
     {
         id: 10,
         name: "Black Jacquard Aztec",
-        price: 130.00,
+        price: 125.00,
         description: "Sophisticated structured black jacquardaztec abaya with subtle details",
         images: {
             main: "/assets/images/products/black-jacquard-aztec.jpg",
@@ -286,7 +294,7 @@ const products = [
     {
         id: 11,
         name: "Velvet Black",
-        price: 145.00,
+        price: 150.00,
         description: "Elegant and regal velvet black abaya with intricate detailing",
         images: {
             main: "/assets/images/products/velvet-black.jpg",
@@ -314,7 +322,7 @@ const products = [
     {
         id: 12,
         name: "Lightweight Maroon",
-        price: 55.00,
+        price: 40.00,
         description: "Lightweight maroon 100% viscose abaya with slip dress",
         images: {
             main: "/assets/images/products/lightweight-maroon.jpg",
@@ -340,7 +348,7 @@ const products = [
     {
         id: 13,
         name: "Lightweight Woven Pattern Brown",
-        price: 50.00,
+        price: 30.00,
         description: "Lightweight, everyday abaya, soft and breathable",
         images: {
             main: "/assets/images/products/lightweight-woven-pattern-brown.jpg",
@@ -368,7 +376,7 @@ const products = [
     {
         id: 14,
         name: "Lightweight Woven Pattern Green",
-        price: 50.00,
+        price: 30.00,
         description: "Lightweight, everyday abaya, soft and breathable",
         images: {
             main: "/assets/images/products/lightweight-woven-pattern-green.jpg",
@@ -405,15 +413,30 @@ const migrateProducts = async () => {
         await Product.deleteMany({});
         console.log('Cleared existing products...');
         
-        // Make sure all products have a unique ID
+        // Make sure all products have a unique ID and validate required fields
         products.forEach((product, index) => {
             // Ensure each product has a unique ID
-            product.id = index + 1;
+            product.id = (index + 1).toString(); // Convert to string to match schema
+            
+            // Ensure slug exists and is unique
+            if (!product.slug) {
+                product.slug = product.name.toLowerCase().replace(/\s+/g, '-');
+            }
+            
+            // Validate required fields
+            if (!product.name || !product.price || !product.description || !product.reference) {
+                throw new Error(`Product ${product.id} is missing required fields`);
+            }
+            
+            if (!product.images || !product.images.main) {
+                throw new Error(`Product ${product.id} (${product.name}) is missing required image`);
+            }
         });
         
         // Insert products
         const result = await Product.insertMany(products);
         console.log(`Successfully migrated ${result.length} products to MongoDB!`);
+        console.log(`Database now contains ${result.length} products.`);
         
         process.exit(0);
     } catch (error) {

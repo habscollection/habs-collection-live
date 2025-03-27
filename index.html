@@ -10,9 +10,9 @@
    <style>
       /* Video optimization styles */
       video {
-         object-fit: cover;
          width: 100%;
          height: 100%;
+         object-fit: cover;
          position: relative;
          z-index: 0;
          background-color: #000; /* Fallback color while video loads */
@@ -84,16 +84,6 @@
          to {
             transform: rotate(360deg);
          }
-      }
-      
-      /* Lazy video loading */
-      .lazy-video {
-         opacity: 0;
-         transition: opacity 0.5s ease;
-      }
-      
-      .lazy-video.loaded {
-         opacity: 1;
       }
       
       /* Optimize fonts */
@@ -230,9 +220,8 @@
        <section class="collection-categories">
            <div class="category">
                <div class="video-wrapper">
-                   <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="lazy-video" preload="none" data-src="assets/video/Abaya 1.mp4">
-                       <!-- Placeholder until video loads -->
-                       <div class="video-placeholder"></div>
+                   <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture preload="metadata">
+                       <source src="assets/video/Abaya 1.mp4" type="video/mp4">
                    </video>
                    <div class="overlay"></div>
                </div>
@@ -241,9 +230,8 @@
            </div>
            <div class="category">
                <div class="video-wrapper">
-                   <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="lazy-video" preload="none" data-src="assets/video/Abaya 2.mp4">
-                       <!-- Placeholder until video loads -->
-                       <div class="video-placeholder"></div>
+                   <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture preload="metadata">
+                       <source src="assets/video/Abaya 2.mp4" type="video/mp4">
                    </video>
                    <div class="overlay"></div>
                </div>
@@ -314,9 +302,8 @@
 <section class="about-section">
     <div class="about-container">
         <div class="about-video">
-            <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture class="lazy-video" preload="none" data-src="assets/video/BTS. about-video.mp4">
-                <!-- Placeholder until video loads -->
-                <div class="video-placeholder"></div>
+            <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture preload="metadata">
+                <source src="assets/video/BTS. about-video.mp4" type="video/mp4">
             </video>
         </div>
         <div class="about-content">
@@ -571,62 +558,14 @@
     
     // Ensure videos play correctly across all devices
     document.addEventListener('DOMContentLoaded', function() {
-        // Select all videos
+        // Get all videos
         const videos = document.querySelectorAll('video');
-        const lazyVideos = document.querySelectorAll('.lazy-video');
-        
-        // Set up Intersection Observer for lazy loading videos
-        const videoObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const video = entry.target;
-                    const videoSrc = video.dataset.src;
-                    
-                    if (videoSrc) {
-                        // Create and append source element
-                        const source = document.createElement('source');
-                        source.src = videoSrc;
-                        source.type = 'video/mp4';
-                        
-                        // Remove placeholder if exists
-                        const placeholder = video.querySelector('.video-placeholder');
-                        if (placeholder) {
-                            placeholder.style.opacity = '0';
-                            setTimeout(() => {
-                                placeholder.remove();
-                            }, 500);
-                        }
-                        
-                        // Add source and load video
-                        video.appendChild(source);
-                        video.load();
-                        video.classList.add('loaded');
-                        
-                        // Auto play video once loaded
-                        video.play().catch(e => {
-                            console.log('Auto-play was prevented for lazy-loaded video');
-                        });
-                        
-                        // Stop observing once loaded
-                        observer.unobserve(video);
-                    }
-                }
-            });
-        }, {
-            rootMargin: '100px 0px', // Load videos 100px before they enter viewport
-            threshold: 0
-        });
-        
-        // Apply observer to all lazy videos
-        lazyVideos.forEach(video => {
-            videoObserver.observe(video);
-        });
         
         // Function to start playing videos
         function playVideos() {
             videos.forEach(video => {
                 // Reset video if it's paused
-                if (video.paused && !video.classList.contains('lazy-video')) {
+                if (video.paused) {
                     video.play().catch(e => {
                         console.log('Auto-play was prevented for a video');
                     });
@@ -634,7 +573,7 @@
             });
         }
         
-        // Play non-lazy videos when page loads
+        // Play videos when page loads
         playVideos();
         
         // Restart videos that might have been paused when page becomes visible again
@@ -653,15 +592,13 @@
         window.addEventListener('orientationchange', function() {
             setTimeout(function() {
                 videos.forEach(video => {
-                    if (!video.classList.contains('lazy-video') || video.classList.contains('loaded')) {
-                        // Force reset of video
-                        const currentTime = video.currentTime;
-                        video.load();
-                        video.currentTime = currentTime;
-                        video.play().catch(e => {
-                            console.log('Could not restart video after orientation change');
-                        });
-                    }
+                    // Force reset of video
+                    const currentTime = video.currentTime;
+                    video.load();
+                    video.currentTime = currentTime;
+                    video.play().catch(e => {
+                        console.log('Could not restart video after orientation change');
+                    });
                 });
             }, 500);
         });

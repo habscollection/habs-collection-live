@@ -25,32 +25,70 @@ async function connectDB() {
     try {
         await mongoose.connect(process.env.MONGODB_URI, {
             useNewUrlParser: true,
-            useUnifiedTopology: true
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
+            socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+            connectTimeoutMS: 10000, // Timeout connection after 10 seconds
+            family: 4 // Use IPv4, skip trying IPv6
         });
         console.log('Connected to MongoDB');
     } catch (error) {
         console.error('MongoDB connection error:', error);
-        process.exit(1);
+        // Don't terminate the process on failed connection
+        // Just log the error and continue
+        console.log('Will retry connecting to MongoDB...');
+        // Retry connection after delay
+        setTimeout(connectDB, 5000);
     }
 }
 
 // Connect to MongoDB
 connectDB();
 
+// Monitor for disconnection events
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB disconnected. Attempting to reconnect...');
+    setTimeout(connectDB, 5000);
+});
+
+mongoose.connection.on('error', (err) => {
+    console.log('MongoDB connection error:', err);
+});
+
 // Session middleware
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
+    store: MongoStore.create({ 
+        mongoUrl: process.env.MONGODB_URI,
+        touchAfter: 24 * 3600, // Refresh session only once in 24 hours to reduce writes
+        ttl: 14 * 24 * 60 * 60, // 14 days - session expiry
+        autoRemove: 'native', // Use MongoDB TTL index
+        mongoOptions: { useUnifiedTopology: true }, // Use same options
+        collectionName: 'sessions',
+        stringify: false // Don't stringify session data
+    }),
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
-    }
+        secure: process.env.NODE_ENV === 'production' && (process.env.DISABLE_SECURE_COOKIE !== 'true'),
+        httpOnly: true,
+        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
+        sameSite: 'lax' // Provides some CSRF protection
+    },
+    name: 'habs.sid' // Custom cookie name instead of default
 }));
 
 // Essential middleware
 app.use(express.json());
+
+// Add health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'UP',
+    timestamp: new Date().toISOString(),
+    message: 'Server is running properly'
+  });
+});
 
 // Add CORS headers to allow API requests from the frontend
 app.use((req, res, next) => {
@@ -371,12 +409,42 @@ app.use('/api', (err, req, res, next) => {
 // Serve static files from the root directory, but exclude /api paths
 app.use('/', (req, res, next) => {
     // Skip static file handling for API requests
-    if (req.path.startsWith('/api')) {
+    if (req.path.startsWith('/api') || 
+        req.path === '/create-payment-intent' || 
+        req.path === '/payment-success') {
         return next();
     }
     
+    // Resolve the paths for both development and production environments
+    let staticPath;
+    if (process.env.NODE_ENV === 'production') {
+        // Use absolute path in production (configurable via env)
+        staticPath = process.env.STATIC_PATH || path.join(__dirname, '../');
+    } else {
+        // Development path
+        staticPath = path.join(__dirname, '../');
+    }
+    
+    console.log(`Serving static files from: ${staticPath}`);
+    
     // For all other requests, try to serve static files
-    express.static(path.join(__dirname, '../'))(req, res, next);
+    express.static(staticPath, {
+        etag: true,              // Enable ETags for caching
+        lastModified: true,      // Set Last-Modified headers
+        setHeaders: (res, path) => {
+            // Add Cache-Control headers based on file type
+            if (path.endsWith('.html')) {
+                // Don't cache HTML files
+                res.setHeader('Cache-Control', 'no-cache');
+            } else if (path.match(/\.(jpg|jpeg|png|gif|ico|svg|webp)$/)) {
+                // Cache images for 1 month
+                res.setHeader('Cache-Control', 'public, max-age=2592000');
+            } else if (path.match(/\.(css|js)$/)) {
+                // Cache CSS and JS for 1 week
+                res.setHeader('Cache-Control', 'public, max-age=604800');
+            }
+        }
+    })(req, res, next);
 });
 
 // ===== PAGE ROUTES - Serve HTML pages =====
@@ -405,7 +473,49 @@ app.get('*', (req, res) => {
 // General error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server Error:', err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
+    
+    // Determine error type and status code
+    let statusCode = 500;
+    let errorMessage = 'Something went wrong!';
+    
+    // Handle specific error types
+    if (err.name === 'ValidationError') {
+        statusCode = 400;
+        errorMessage = err.message || 'Validation error';
+    } else if (err.name === 'UnauthorizedError') {
+        statusCode = 401;
+        errorMessage = 'Unauthorized access';
+    } else if (err.name === 'NotFoundError') {
+        statusCode = 404;
+        errorMessage = err.message || 'Resource not found';
+    }
+    
+    // Log additional request details in case of error
+    console.error(`Error details: ${req.method} ${req.url}, User-Agent: ${req.get('User-Agent')}`);
+    
+    // Return appropriate response
+    if (req.path.startsWith('/api') || req.xhr) {
+        // API/XHR request - return JSON error
+        return res.status(statusCode).json({
+            error: errorMessage,
+            status: statusCode,
+            path: req.path,
+            timestamp: new Date().toISOString()
+        });
+    } else {
+        // Regular request - render error page or redirect to error page
+        // For simplicity, sending error in HTML format
+        return res.status(statusCode).send(`
+            <html>
+                <head><title>Error - ${statusCode}</title></head>
+                <body>
+                    <h1>Error</h1>
+                    <p>${errorMessage}</p>
+                    <a href="/">Return to homepage</a>
+                </body>
+            </html>
+        `);
+    }
 });
 
 // Send order confirmation email function
@@ -566,3 +676,35 @@ async function sendOrderConfirmation(order) {
 
 const PORT = process.env.PORT || 5501;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
+
+// Add additional startup diagnostics
+const startupInfo = {
+  node_version: process.version,
+  environment: process.env.NODE_ENV || 'development',
+  port: PORT,
+  hostname: require('os').hostname(),
+  platform: process.platform,
+  uptime: process.uptime(),
+  memory: process.memoryUsage(),
+  mongo_uri: process.env.MONGODB_URI ? process.env.MONGODB_URI.split('@')[1] : 'Not configured', // Hide credentials
+  api_paths: ['/api/products', '/api/orders', '/api/auth', '/api/cart', '/api/stripe', '/create-payment-intent', '/payment-success']
+};
+
+console.log('Server startup complete with configuration:', startupInfo);
+console.log(`API is available at http://localhost:${PORT}/api`);
+console.log(`Health check endpoint: http://localhost:${PORT}/health`);
+
+// Handle unexpected errors
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+  console.error(err.name, err.message, err.stack);
+  // Exit with error
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION! 💥 Shutting down...');
+  console.error(err);
+  // Exit with error
+  process.exit(1);
+}); 

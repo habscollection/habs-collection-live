@@ -3,21 +3,18 @@ const path = require('path');
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
+const connectDB = require('./database');
 
-// MongoDB connection
-async function connectDB() {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('Connected to MongoDB');
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-        process.exit(1);
-    }
-}
+// Add graceful shutdown handler
+process.on('SIGINT', async () => {
+    console.log('\nReceived SIGINT. Closing MongoDB connection and exiting...');
+    await mongoose.connection.close();
+    process.exit(0);
+});
 
 async function generateMainProductsPage() {
     try {
-        // Connect to MongoDB
+        // Connect to MongoDB using the shared connection function
         await connectDB();
 
         // Get all products
