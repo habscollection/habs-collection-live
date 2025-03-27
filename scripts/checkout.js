@@ -326,15 +326,98 @@ document.addEventListener('DOMContentLoaded', async function() {
                 };
 
                 // Get cart total from order summary or recalculate
-                const totalInfo = await updateOrderSummary();
+                const cartTotal = document.querySelector('.order-summary-total').dataset.total;
+                const amount = parseFloat(cartTotal);
                 
-                // In a real application, you would:
-                // 1. Create payment intent on server
-                // 2. Confirm payment with Stripe
-                // 3. Process order on server
+                // Get cart items
+                const cartItems = window.cart ? window.cart.items : JSON.parse(localStorage.getItem('cart') || '[]');
                 
-                // Since we don't have a live Stripe integration, simulate success
-                console.log('[DEBUG CHECKOUT] Order processed successfully (demo mode)');
+                if (!amount || amount <= 0 || !cartItems || cartItems.length === 0) {
+                    throw new Error('Invalid cart data');
+                }
+                
+                // Create payment intent on server
+                const paymentIntentResponse = await fetch('/create-payment-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount })
+                });
+                
+                if (!paymentIntentResponse.ok) {
+                    const errorData = await paymentIntentResponse.json();
+                    throw new Error(errorData.error || 'Failed to create payment intent');
+                }
+                
+                const { clientSecret } = await paymentIntentResponse.json();
+                
+                // Process payment with Stripe
+                if (!stripe || !card) {
+                    throw new Error('Stripe not initialized properly');
+                }
+                
+                const paymentResult = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: card,
+                        billing_details: {
+                            name: `${orderData.customer.firstName} ${orderData.customer.lastName}`,
+                            email: orderData.customer.email,
+                            phone: orderData.customer.phone,
+                            address: {
+                                line1: orderData.customer.address,
+                                city: orderData.customer.city,
+                                postal_code: orderData.customer.postcode,
+                                country: orderData.customer.country
+                            }
+                        }
+                    }
+                });
+                
+                if (paymentResult.error) {
+                    throw new Error(paymentResult.error.message || 'Payment failed');
+                }
+                
+                if (paymentResult.paymentIntent.status !== 'succeeded') {
+                    throw new Error(`Payment status: ${paymentResult.paymentIntent.status}`);
+                }
+                
+                // Payment successful - now create the order
+                const orderResponse = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: cartItems,
+                        shipping: {
+                            firstName: orderData.customer.firstName,
+                            lastName: orderData.customer.lastName,
+                            email: orderData.customer.email,
+                            phone: orderData.customer.phone,
+                            address: orderData.customer.address,
+                            city: orderData.customer.city,
+                            postcode: orderData.customer.postcode,
+                            country: orderData.customer.country
+                        },
+                        payment: {
+                            method: 'card',
+                            transactionId: paymentResult.paymentIntent.id
+                        },
+                        subtotal: amount,
+                        total: amount
+                    })
+                });
+                
+                if (!orderResponse.ok) {
+                    const errorData = await orderResponse.json();
+                    throw new Error(errorData.error || 'Failed to create order');
+                }
+                
+                const orderResult = await orderResponse.json();
+                
+                // Notify server of payment success
+                await fetch('/payment-success', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: orderResult.orderId })
+                });
                 
                 // Clear the cart after successful order
                 try {
@@ -347,22 +430,30 @@ document.addEventListener('DOMContentLoaded', async function() {
                         window.cart.updateCartDisplay();
                     }
                     
-                    console.log('[DEBUG CHECKOUT] Cart cleared successfully');
+                    console.log('[DEBUG CHECKOUT] Payment successful! Cart cleared.');
                 } catch (clearError) {
                     console.error('[DEBUG CHECKOUT] Error clearing cart:', clearError);
                 }
                 
                 // Redirect to success page
-                // In production, this would happen after confirming payment
                 setTimeout(() => {
-                    window.location.href = 'order-success.html';
+                    window.location.href = `order-success.html?order=${orderResult.orderId}`;
                 }, 1500);
                 
             } catch (error) {
                 console.error('[DEBUG CHECKOUT] Error processing order:', error);
                 submitButton.disabled = false;
                 submitButton.textContent = 'Place Order';
-                alert('There was an error processing your order. Please try again.');
+                
+                // Show error to user
+                const errorElement = document.getElementById('card-errors') || document.createElement('div');
+                errorElement.textContent = error.message || 'There was an error processing your payment. Please try again.';
+                errorElement.style.color = '#dc3545';
+                errorElement.style.marginTop = '10px';
+                
+                if (!document.getElementById('card-errors')) {
+                    cardPaymentForm.appendChild(errorElement);
+                }
             }
         }
 
