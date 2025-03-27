@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { sendOrderConfirmation } = require('../utils/emailService');
+const mongoose = require('mongoose');
 
 // POST /api/orders - Create a new order
 router.post('/', async (req, res) => {
@@ -24,6 +25,21 @@ router.post('/', async (req, res) => {
                     return res.status(400).json({ 
                         error: 'Payment has not been completed successfully',
                         paymentStatus: paymentIntent.status 
+                    });
+                }
+                
+                // Additional validation - check if the amount paid matches the order total
+                const amountPaid = paymentIntent.amount / 100; // Convert from cents
+                const orderTotal = parseFloat(total);
+                
+                // Allow for a small difference due to currency conversion/rounding
+                const tolerance = 0.01;
+                if (Math.abs(amountPaid - orderTotal) > tolerance) {
+                    console.error(`Payment amount mismatch: Expected ${orderTotal}, got ${amountPaid}`);
+                    return res.status(400).json({ 
+                        error: 'Payment amount does not match order total',
+                        expected: orderTotal,
+                        actual: amountPaid
                     });
                 }
                 
@@ -97,6 +113,54 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Error creating order:', error);
         res.status(500).json({ error: 'Failed to create order' });
+    }
+});
+
+// GET /api/orders/verify/:id - Verify if an order exists and is paid
+router.get('/verify/:id', async (req, res) => {
+    try {
+        let order;
+        const id = req.params.id;
+        
+        // Try to find by MongoDB ObjectID first
+        try {
+            if (mongoose.Types.ObjectId.isValid(id)) {
+                order = await Order.findById(id);
+            }
+        } catch (idError) {
+            console.log('Not a valid ObjectId, trying orderId instead');
+        }
+        
+        // If not found, try by custom orderId
+        if (!order) {
+            order = await Order.findOne({ orderId: id });
+        }
+        
+        if (!order) {
+            return res.status(404).json({ 
+                valid: false,
+                message: 'Order not found' 
+            });
+        }
+        
+        // Check if the order is in a paid/processing status
+        const validStatuses = ['paid', 'processing', 'shipped', 'delivered'];
+        const isValidStatus = validStatuses.includes(order.status);
+        
+        // Return both IDs to help debugging
+        res.json({
+            valid: isValidStatus,
+            orderId: order.orderId,
+            _id: order._id,
+            status: order.status,
+            message: isValidStatus ? 'Order is valid' : 'Order has not been paid'
+        });
+    } catch (error) {
+        console.error('Error verifying order:', error);
+        res.status(500).json({ 
+            valid: false,
+            error: error.message 
+        });
     }
 });
 

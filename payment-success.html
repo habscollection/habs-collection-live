@@ -194,6 +194,9 @@
                         }
                     }
 
+                    // Set a flag in session storage to indicate payment verification
+                    sessionStorage.setItem('payment_verified', 'true');
+
                     // Redirect to order success page
                     window.location.href = `order-success.html?id=${orderResult.orderId}`;
                     
@@ -252,6 +255,9 @@
                                     window.cart.updateCartDisplay();
                                 }
                             }
+
+                            // Set a flag in session storage to indicate payment verification
+                            sessionStorage.setItem('payment_verified', 'true');
 
                             // Redirect to success page
                             window.location.href = `order-success.html?id=${orderResult.orderId}`;

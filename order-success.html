@@ -184,25 +184,100 @@
             const orderId = params.get('id');
             
             if (!orderId) {
-                // Handle case where no order ID is provided
-                document.getElementById('order-number').textContent = 'Not available';
-                document.getElementById('order-date').textContent = 'Not available';
-                document.getElementById('shipping-address').textContent = 'Not available';
-                document.getElementById('payment-method').textContent = 'Not available';
-                document.getElementById('total-amount').textContent = 'Not available';
+                console.error('No order ID provided, redirecting to home page');
+                // Redirect to home page if no order ID is provided
+                window.location.href = '/';
                 return;
+            }
+            
+            // Security check - verify this came from the payment flow
+            const fromPayment = sessionStorage.getItem('payment_verified');
+            if (!fromPayment) {
+                // Check if we came from a legitimate payment verification
+                const referrer = document.referrer;
+                const isFromPaymentPage = referrer.includes('payment-success.html');
+                
+                if (!isFromPaymentPage) {
+                    console.warn('Direct access to order success page detected without payment verification');
+                    // For improved user experience, try to verify the order with the server
+                    try {
+                        // Check if order exists and is paid
+                        const verifyResponse = await fetch(`/api/orders/verify/${orderId}`);
+                        if (!verifyResponse.ok) {
+                            console.error('Failed to verify order, redirecting to home page');
+                            window.location.href = '/';
+                            return;
+                        }
+                        
+                        const verifyResult = await verifyResponse.json();
+                        if (!verifyResult.valid) {
+                            console.error('Order verification failed, redirecting to home page');
+                            window.location.href = '/';
+                            return;
+                        }
+                        
+                        // If we got here, the order is valid despite not coming from payment flow
+                        console.log('Order verified via server despite bypassing payment flow');
+                    } catch (verifyError) {
+                        // If verification fails or endpoint doesn't exist, redirect home
+                        console.error('Order verification error, redirecting to home page');
+                        window.location.href = '/';
+                        return;
+                    }
+                }
+            } else {
+                // Clear the payment verification flag
+                sessionStorage.removeItem('payment_verified');
             }
             
             try {
                 // Fetch order details from API
                 const response = await fetch(`/api/orders/${orderId}`);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch order');
+                    console.error('Failed to fetch order by MongoDB ID, trying with orderId');
+                    
+                    // If the order is not found by MongoDB ID, try with orderId
+                    try {
+                        // Use the verify endpoint which supports both types of IDs
+                        const verifyResponse = await fetch(`/api/orders/verify/${orderId}`);
+                        if (!verifyResponse.ok) {
+                            throw new Error('Failed to verify order');
+                        }
+                        
+                        const verifyResult = await verifyResponse.json();
+                        if (!verifyResult.valid) {
+                            throw new Error('Order is not valid or not paid');
+                        }
+                        
+                        // Use the MongoDB ID from the verification response
+                        const secondResponse = await fetch(`/api/orders/${verifyResult._id}`);
+                        if (!secondResponse.ok) {
+                            throw new Error('Failed to fetch order after verification');
+                        }
+                        
+                        const order = await secondResponse.json();
+                        updateOrderDisplay(order);
+                        return;
+                    } catch (secondError) {
+                        console.error('Error during alternative order fetch:', secondError);
+                        throw new Error('Failed to fetch order details');
+                    }
                 }
                 
                 const order = await response.json();
-                
-                // Update order details on page
+                updateOrderDisplay(order);
+            } catch (error) {
+                console.error('Error fetching order details:', error);
+                // Show error state in UI
+                document.getElementById('order-number').textContent = orderId;
+                document.getElementById('order-date').textContent = new Date().toLocaleDateString();
+                document.getElementById('shipping-address').textContent = 'Error loading address';
+                document.getElementById('payment-method').textContent = 'Error loading payment method';
+                document.getElementById('total-amount').textContent = 'Error loading total';
+            }
+            
+            // Helper function to update the order display
+            function updateOrderDisplay(order) {
                 document.getElementById('order-number').textContent = order._id;
                 document.getElementById('order-date').textContent = new Date(order.createdAt).toLocaleDateString();
                 document.getElementById('shipping-address').textContent = `${order.shipping.address}, ${order.shipping.city}, ${order.shipping.postcode}, ${order.shipping.country}`;
@@ -214,14 +289,6 @@
                     e.preventDefault();
                     alert('Order tracking will be available once your order ships.');
                 });
-                
-            } catch (error) {
-                console.error('Error fetching order details:', error);
-                document.getElementById('order-number').textContent = orderId;
-                document.getElementById('order-date').textContent = new Date().toLocaleDateString();
-                document.getElementById('shipping-address').textContent = 'Error loading address';
-                document.getElementById('payment-method').textContent = 'Error loading payment method';
-                document.getElementById('total-amount').textContent = 'Error loading total';
             }
         });
     </script>
