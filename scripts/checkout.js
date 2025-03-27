@@ -371,12 +371,40 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 });
                 
+                // Log the full payment result for debugging
+                console.log('Payment result:', JSON.stringify(paymentResult, null, 2));
+                
                 if (paymentResult.error) {
-                    throw new Error(paymentResult.error.message || 'Payment failed');
+                    // Handle specific error types - card declined, authentication required, etc.
+                    if (paymentResult.error.type === 'card_error' || paymentResult.error.type === 'validation_error') {
+                        console.error(`Card error: ${paymentResult.error.message}`);
+                        throw new Error(paymentResult.error.message || 'Your card was declined.');
+                    } else {
+                        console.error(`Payment error: ${paymentResult.error.message}`);
+                        throw new Error(paymentResult.error.message || 'Payment failed');
+                    }
                 }
 
-                // Redirect to payment processing page
-                window.location.href = `payment-success.html?payment_intent=${paymentResult.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
+                // Additional check to make sure the payment status is successful
+                if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'succeeded') {
+                    // Payment is confirmed successful, proceed with redirect
+                    console.log('Payment confirmed successful, redirecting to success page');
+                    // Always go through payment-success.html first for server-side validation
+                    window.location.href = `payment-success.html?payment_intent=${paymentResult.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
+                } else if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'processing') {
+                    // Payment is still processing, redirect to processing page
+                    console.log('Payment processing, redirecting to processing page');
+                    window.location.href = `payment-success.html?payment_intent=${paymentResult.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
+                } else if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'requires_action') {
+                    // 3D Secure or similar authentication is required
+                    console.log('Payment requires additional action');
+                    // The SDK will handle this automatically, just wait for the result
+                } else {
+                    // Any other status is considered a failure
+                    const status = paymentResult.paymentIntent ? paymentResult.paymentIntent.status : 'unknown';
+                    console.error(`Payment has unexpected status: ${status}`);
+                    throw new Error(`Payment failed with status: ${status}. Please try again.`);
+                }
                 
             } catch (error) {
                 console.error('[DEBUG CHECKOUT] Error processing order:', error);

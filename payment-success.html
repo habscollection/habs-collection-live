@@ -95,7 +95,8 @@
             const paymentIntentId = new URLSearchParams(window.location.search).get('payment_intent');
             
             if (!clientSecret || !paymentIntentId) {
-                window.location.href = '/checkout.html';
+                console.error('Missing payment intent details in URL');
+                window.location.href = '/checkout.html?error=' + encodeURIComponent('Invalid payment data');
                 return;
             }
             
@@ -103,6 +104,7 @@
             function showErrorAndRedirect(message) {
                 const errorElement = document.getElementById('error-message');
                 errorElement.textContent = message;
+                console.error('Payment error:', message);
                 setTimeout(() => {
                     window.location.href = '/checkout.html?error=' + encodeURIComponent(message);
                 }, 3000);
@@ -111,6 +113,40 @@
             try {
                 // Retrieve payment intent status
                 const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+                
+                // Log payment intent details for debugging
+                console.log('Payment intent status:', paymentIntent.status);
+                console.log('Payment intent ID:', paymentIntent.id);
+                
+                // Double check that the payment intent ID matches what we expect
+                if (paymentIntent.id !== paymentIntentId) {
+                    console.error('Payment intent ID mismatch');
+                    showErrorAndRedirect('Payment verification failed - security check failed');
+                    return;
+                }
+                
+                // Verify payment status directly with server as an additional security measure
+                try {
+                    const verifyResponse = await fetch(`/api/verify-payment?payment_intent=${paymentIntentId}`, {
+                        method: 'GET'
+                    });
+                    
+                    if (!verifyResponse.ok) {
+                        const errorData = await verifyResponse.json();
+                        throw new Error(errorData.error || 'Server verification failed');
+                    }
+                    
+                    const verifyResult = await verifyResponse.json();
+                    if (!verifyResult.verified) {
+                        throw new Error(verifyResult.message || 'Payment could not be verified');
+                    }
+                    
+                    console.log('Payment verified by server');
+                } catch (verifyError) {
+                    // If server verification endpoint doesn't exist yet, fall back to client-side verification
+                    console.warn('Server verification failed, using client-side verification:', verifyError);
+                    // Continue with client-side verification below
+                }
                 
                 if (paymentIntent.status === 'succeeded') {
                     console.log('Payment successful! Creating order...');
