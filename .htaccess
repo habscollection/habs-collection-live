@@ -1,26 +1,2 @@
-# Basic security
+# Basic security - prevent directory listing
 Options -Indexes
-
-# URL handling
-<IfModule mod_rewrite.c>
-  RewriteEngine on
-  
-  # Redirect to HTTPS
-  RewriteCond %{HTTPS} off
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-  
-  # Remove .html extension
-  RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /(.+)\.html\ HTTP
-  RewriteRule ^(.+)\.html$ /$1 [R=301,L]
-  
-  # Internally map "/page" back to "/page.html"
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME}.html -f
-  RewriteRule ^(.+)$ $1.html [L]
-  
-  # Allow API requests to pass through to backend
-  RewriteCond %{REQUEST_URI} ^/api/ [OR]
-  RewriteCond %{REQUEST_URI} ^/create-payment-intent [OR]
-  RewriteCond %{REQUEST_URI} ^/payment-success
-  RewriteRule ^(.*)$ - [L]
-</IfModule>
