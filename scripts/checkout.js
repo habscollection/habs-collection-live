@@ -300,131 +300,117 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
 
-        // Handle form submission
-        async function handleSubmit(e) {
-            e.preventDefault();
-            
-            if (!validateStep(currentStep)) {
-                return;
+async function handleSubmit(e) {
+    e.preventDefault();
+    
+    // Validate the current step
+    if (!validateStep(currentStep)) {
+        return;
+    }
+
+    const submitButton = document.querySelector('.btn-submit');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Processing...';
+
+    try {
+        // Prepare order data
+        const formData = new FormData(checkoutForm);
+        const orderData = {
+            customer: {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                address: formData.get('address'),
+                city: formData.get('city'),
+                postcode: formData.get('postcode'),
+                country: formData.get('country')
             }
+        };
 
-            const submitButton = document.querySelector('.btn-submit');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Processing...';
+        // Get cart total
+        const cartTotal = document.querySelector('.order-summary-total').dataset.total;
+        const amount = parseFloat(cartTotal);
 
-            try {
-                const formData = new FormData(checkoutForm);
-                const orderData = {
-                    customer: {
-                        firstName: formData.get('firstName'),
-                        lastName: formData.get('lastName'),
-                        email: formData.get('email'),
-                        phone: formData.get('phone'),
-                        address: formData.get('address'),
-                        city: formData.get('city'),
-                        postcode: formData.get('postcode'),
-                        country: formData.get('country')
-                    }
-                };
-
-                // Get cart total from order summary
-                const cartTotal = document.querySelector('.order-summary-total').dataset.total;
-                const amount = parseFloat(cartTotal);
-                
-                // Get cart items
-                const cartItems = window.cart ? window.cart.items : JSON.parse(localStorage.getItem('cart') || '[]');
-                
-                if (!amount || amount <= 0 || !cartItems || cartItems.length === 0) {
-                    throw new Error('Invalid cart data');
-                }
-                
-                // Create payment intent
-                const paymentIntentResponse = await fetch('/api/create-payment-intent', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        amount,
-                        orderData // Include order data with payment intent
-                    })
-                });
-                
-                if (!paymentIntentResponse.ok) {
-                    const errorData = await paymentIntentResponse.json();
-                    throw new Error(errorData.error || 'Failed to create payment intent');
-                }
-                
-                const { clientSecret } = await paymentIntentResponse.json();
-                
-                // Confirm card payment
-                const paymentResult = await stripe.confirmCardPayment(clientSecret, {
-                    payment_method: {
-                        card: card,
-                        billing_details: {
-                            name: `${orderData.customer.firstName} ${orderData.customer.lastName}`,
-                            email: orderData.customer.email,
-                            phone: orderData.customer.phone,
-                            address: {
-                                line1: orderData.customer.address,
-                                city: orderData.customer.city,
-                                postal_code: orderData.customer.postcode,
-                                country: orderData.customer.country
-                            }
-                        }
-                    }
-                });
-                
-                // Log the full payment result for debugging
-                console.log('Payment result:', JSON.stringify(paymentResult, null, 2));
-                
-                if (paymentResult.error) {
-                    // Handle specific error types - card declined, authentication required, etc.
-                    if (paymentResult.error.type === 'card_error' || paymentResult.error.type === 'validation_error') {
-                        console.error(`Card error: ${paymentResult.error.message}`);
-                        throw new Error(paymentResult.error.message || 'Your card was declined.');
-                    } else {
-                        console.error(`Payment error: ${paymentResult.error.message}`);
-                        throw new Error(paymentResult.error.message || 'Payment failed');
-                    }
-                }
-
-                // Additional check to make sure the payment status is successful
-                if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'succeeded') {
-                    // Payment is confirmed successful, proceed with redirect
-                    console.log('Payment confirmed successful, redirecting to success page');
-                    // Always go through payment-success.html first for server-side validation
-                    window.location.href = `payment-success.html?payment_intent=${paymentResult.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
-                } else if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'processing') {
-                    // Payment is still processing, redirect to processing page
-                    console.log('Payment processing, redirecting to processing page');
-                    window.location.href = `payment-success.html?payment_intent=${paymentResult.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
-                } else if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'requires_action') {
-                    // 3D Secure or similar authentication is required
-                    console.log('Payment requires additional action');
-                    // The SDK will handle this automatically, just wait for the result
-                } else {
-                    // Any other status is considered a failure
-                    const status = paymentResult.paymentIntent ? paymentResult.paymentIntent.status : 'unknown';
-                    console.error(`Payment has unexpected status: ${status}`);
-                    throw new Error(`Payment failed with status: ${status}. Please try again.`);
-                }
-                
-            } catch (error) {
-                console.error('[DEBUG CHECKOUT] Error processing order:', error);
-                submitButton.disabled = false;
-                submitButton.textContent = 'Place Order';
-                
-                // Show error to user
-                const errorElement = document.getElementById('card-errors') || document.createElement('div');
-                errorElement.textContent = error.message || 'There was an error processing your payment. Please try again.';
-                errorElement.style.color = '#dc3545';
-                errorElement.style.marginTop = '10px';
-                
-                if (!document.getElementById('card-errors')) {
-                    cardPaymentForm.appendChild(errorElement);
-                }
-            }
+        // Validate cart
+        const cartItems = window.cart ? window.cart.items : JSON.parse(localStorage.getItem('cart') || '[]');
+        if (!amount || amount <= 0 || !cartItems || cartItems.length === 0) {
+            throw new Error('Invalid cart data');
         }
 
+        // Create payment intent
+        const paymentIntentResponse = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount, orderData })
+        });
+
+        if (!paymentIntentResponse.ok) {
+            const errorData = await paymentIntentResponse.json();
+            throw new Error(errorData.error || 'Failed to create payment intent');
+        }
+
+        const { clientSecret } = await paymentIntentResponse.json();
+
+        // Confirm card payment
+        const paymentResult = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+                card: card,
+                billing_details: {
+                    name: `${orderData.customer.firstName} ${orderData.customer.lastName}`,
+                    email: orderData.customer.email,
+                    phone: orderData.customer.phone,
+                    address: {
+                        line1: orderData.customer.address,
+                        city: orderData.customer.city,
+                        postal_code: orderData.customer.postcode,
+                        country: orderData.customer.country
+                    }
+                }
+            }
+        });
+
+        // Handle payment result
+        console.log('Payment result:', paymentResult);
+
+        if (paymentResult.error) {
+            // Payment failed
+            console.error(`Payment failed: ${paymentResult.error.message}`);
+            throw new Error(paymentResult.error.message || 'Payment failed. Please try again.');
+        }
+
+        if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'succeeded') {
+            // Payment succeeded, redirect to success page
+            console.log('Payment succeeded, redirecting to success page');
+            window.location.href = `payment-success.html?payment_intent=${paymentResult.paymentIntent.id}&payment_intent_client_secret=${clientSecret}`;
+        } else if (paymentResult.paymentIntent && paymentResult.paymentIntent.status === 'processing') {
+            // Payment is still processing
+            console.warn('Payment is still processing. Please wait.');
+            throw new Error('Payment is still processing. Please wait.');
+        } else {
+            // Any other status is considered a failure
+            console.error(`Unexpected payment status: ${paymentResult.paymentIntent.status}`);
+            throw new Error(`Payment failed with status: ${paymentResult.paymentIntent.status}. Please try again.`);
+        }
+    } catch (error) {
+        console.error('[DEBUG CHECKOUT] Error processing order:', error);
+
+        // Re-enable the submit button
+        submitButton.disabled = false;
+        submitButton.textContent = 'Place Order';
+
+        // Display error message to the user
+        const errorElement = document.getElementById('card-errors') || document.createElement('div');
+        errorElement.textContent = error.message || 'There was an error processing your payment. Please try again.';
+        errorElement.style.color = '#dc3545';
+        errorElement.style.marginTop = '10px';
+
+        if (!document.getElementById('card-errors')) {
+            cardPaymentForm.appendChild(errorElement);
+        }
+    }
+}
+        
         // Immediately initialize the checkout page
         initializeCheckout();
     } catch (error) {
