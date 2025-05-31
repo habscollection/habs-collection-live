@@ -12,6 +12,21 @@ process.on('SIGINT', async () => {
     process.exit(0);
 });
 
+// Check if all sizes are out of stock or soldOut is set
+const isCompletelyOutOfStock = product => {
+    if (product.soldOut) return true;
+    if (!product.sizes || !product.sizes.length || !product.stock) {
+        return false;
+    }
+    for (const size of product.sizes) {
+        const stockLevel = product.stock.get ? product.stock.get(size) : product.stock[size];
+        if (stockLevel && stockLevel > 0) {
+            return false;
+        }
+    }
+    return true;
+};
+
 async function generateMainProductsPage() {
     try {
         // Connect to MongoDB using the shared connection function
@@ -103,6 +118,30 @@ async function generateMainProductsPage() {
             color: #666;
             max-width: 600px;
             margin: 0 auto;
+        }
+
+        /* --- Badge Styles --- */
+        .sale-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #e91e63;
+            color: #fff;
+            padding: 4px 8px;
+            font-size: 13px;
+            border-radius: 3px;
+            z-index: 2;
+        }
+        .out-of-stock-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #333;
+            color: #fff;
+            padding: 4px 8px;
+            font-size: 13px;
+            border-radius: 3px;
+            z-index: 2;
         }
         
         /* Responsive grid */
@@ -208,13 +247,13 @@ async function generateMainProductsPage() {
         <div class="products-grid">
             ${products.map(product => {
                 const isOutOfStock = isCompletelyOutOfStock(product);
-                
                 return `
                     <a href="/products/${product.slug}.html" class="product-card">
                         <div class="product-image">
                             <img src="${product.images.main}" alt="${product.name}" class="main-image">
                             <img src="${product.images.hover || product.images.gallery[0] || product.images.main}" alt="${product.name} Hover" class="hover-image">
-                            ${isOutOfStock ? '<span class="out-of-stock-badge">Out of Stock</span>' : ''}
+                            ${product.sale ? '<span class="sale-badge">Sale</span>' : ''}
+                            ${isOutOfStock ? '<span class="out-of-stock-badge">Sold Out</span>' : ''}
                         </div>
                         <div class="product-info">
                             <h3>${product.name}</h3>
@@ -333,24 +372,5 @@ async function generateMainProductsPage() {
     }
 }
 
-// Check if all sizes are out of stock
-const isCompletelyOutOfStock = product => {
-    // If product has no sizes or stock, consider it available
-    if (!product.sizes || !product.sizes.length || !product.stock) {
-        return false;
-    }
-    
-    // Check each size
-    for (const size of product.sizes) {
-        const stockLevel = product.stock.get ? product.stock.get(size) : product.stock[size];
-        if (stockLevel && stockLevel > 0) {
-            return false; // Found at least one size in stock
-        }
-    }
-    
-    // If we reached here, all sizes are out of stock
-    return true;
-};
-
 // Run the generator
-generateMainProductsPage(); 
+generateMainProductsPage();
