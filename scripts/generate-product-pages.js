@@ -903,11 +903,10 @@ async function generateProductPages() {
 }
 
 module.exports = {
-    generateProductHTML,
-    generateProductPages
+    generateProductHTML
 };
 
-// Run the generator only if this file is executed directly (not imported)
+// Only run the full generation if this file is run directly
 if (require.main === module) {
     generateProductPages();
 } 
