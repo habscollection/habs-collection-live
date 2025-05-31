@@ -45,6 +45,15 @@ const productSchema = new mongoose.Schema({
         type: Map,
         of: Number,
         default: {}
+    },
+    // New fields for sale and sold out labels
+    sale: {
+        type: Boolean,
+        default: false
+    },
+    soldOut: {
+        type: Boolean,
+        default: false
     }
 });
 
