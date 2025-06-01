@@ -42,9 +42,6 @@ async function generateMainProductsPage() {
             const aOut = isCompletelyOutOfStock(a);
             const bOut = isCompletelyOutOfStock(b);
             if (aOut !== bOut) return aOut - bOut;
-
-            // Otherwise, by price descending
-            return b.price - a.price;
 });
 
         // Create the HTML template
