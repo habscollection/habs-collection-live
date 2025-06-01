@@ -33,7 +33,19 @@ async function generateMainProductsPage() {
         await connectDB();
 
         // Get all products
-        const products = await Product.find({}).sort('-price');
+        const products = await Product.find({});
+        products.sort((a, b) => {
+            // On sale first
+            if ((b.sale === true) - (a.sale === true)) return (b.sale === true) - (a.sale === true);
+
+            // In-stock before sold out
+            const aOut = isCompletelyOutOfStock(a);
+            const bOut = isCompletelyOutOfStock(b);
+            if (aOut !== bOut) return aOut - bOut;
+
+            // Otherwise, by price descending
+            return b.price - a.price;
+});
 
         // Create the HTML template
         const html = `
