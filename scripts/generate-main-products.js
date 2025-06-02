@@ -51,7 +51,7 @@ async function generateMainProductsPage() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EID-AL FITR COLLECTION - Habs Collection</title>
+    <title>EID-AL ADHA SALE - Habs Collection</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
     <!-- Load API and Cart scripts early with defer attribute -->
@@ -196,12 +196,12 @@ async function generateMainProductsPage() {
 </head>
 <body>
     <div class="announcement-bar">
-        <p>FREE SHIPPING ON ORDERS OVER £300</p>
+        <p>ORDER BY WEDNESDAY 4TH JUNE 2025</p>
     </div>
 
     <nav class="navbar">
         <div class="nav-left">
-            <a href="/products.html">EID-AL FITR COLLECTION</a>
+            <a href="/products.html">EID AL ADHA SALE NOW ON</a>
         </div>
         <div class="nav-center">
             <a href="/" class="brand-logo">HABS COLLECTION</a>
@@ -241,7 +241,7 @@ async function generateMainProductsPage() {
     <div class="mobile-menu-overlay"></div>
     <div class="mobile-menu">
         <button class="mobile-menu-close">&times;</button>
-        <a href="/products.html">EID-AL FITR COLLECTION - Limited Edition</a>
+        <a href="/products.html">EID-AL ADHA - SALE NOW ON</a>
         <a href="/account.html">Account</a>
         <a href="/cart.html">Cart (<span class="mobile-cart-count">0</span>)</a>
         <a href="/index.html" class="mobile-home-link">Home</a>
@@ -249,8 +249,8 @@ async function generateMainProductsPage() {
 
     <main>
         <div class="collection-header">
-            <h1>EID-AL FITR COLLECTION</h1>
-            <p>Discover our exclusive EID-AL FITR 2025 limited collection, exquisite fabrics and detailed designs for the stand out woman.</p>
+            <h1>EID-AL ADHA SALE</h1>
+            <p>Discover our exclusive one time only EID-AL ADHA sale from our limited collection, exquisite fabrics and detailed designs for the stand out woman.</p>
         </div>
 
         <div class="products-grid">
