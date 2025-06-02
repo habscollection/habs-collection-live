@@ -77,7 +77,7 @@ async function generateProductHTML(product) {
 <body>
     <!-- Announcement Bar -->
     <div class="announcement-bar">
-        <p>ORDER BEFORE THURSDAY 27TH MARCH FOR EID-AL FITR</p>
+        <p>ORDER BY WEDNESDAY 4TH JUNE 2025</p>
     </div>
 
   <nav class="navbar">
