@@ -279,8 +279,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 });
 
                 // Calculate shipping
-                const freeShippingThreshold = 300;
-                const shippingCost = subtotal >= freeShippingThreshold ? 0 : 5;
+                const shippingCost = 5;
                 const total = subtotal + shippingCost;
 
                 summaryItems.innerHTML = itemsHTML;
