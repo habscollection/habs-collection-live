@@ -360,7 +360,7 @@ class Cart {
  
     calculateTotal() {
         this.total = this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        this.shipping = this.total >= 300 ? 0 : 15;
+        this.shipping = this.total >= 300 ? 0 : 5;
         return {
             subtotal: this.total,
             shipping: this.shipping,
